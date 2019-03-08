@@ -1,0 +1,23 @@
+{
+  "name": "privacy-shield-dev-tools",
+  "version": "1.0.0",
+  "description": "configuration tools for Google Chrome Extension development",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielrosado/privacy-shield.git"
+  },
+  "keywords": [
+    "chrome-extension",
+    "privacy"
+  ],
+  "author": "Daniel Rosado",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/danielrosado/privacy-shield/issues"
+  },
+  "homepage": "https://github.com/danielrosado/privacy-shield#readme",
+  "devDependencies": {
+    "eslint": "^5.15.1",
+    "eslint-config-google": "^0.12.0"
+  }
+}
