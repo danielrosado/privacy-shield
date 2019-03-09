@@ -16,8 +16,12 @@
     "url": "https://github.com/danielrosado/privacy-shield/issues"
   },
   "homepage": "https://github.com/danielrosado/privacy-shield#readme",
+  "dependencies": {
+    "parse-domain": "^2.1.7"
+  },
   "devDependencies": {
     "eslint": "^5.15.1",
-    "eslint-config-google": "^0.12.0"
+    "eslint-config-google": "^0.12.0",
+    "path": "^0.12.7"
   }
 }
