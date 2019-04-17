@@ -21,13 +21,6 @@ const buildPlugins = [
       ignore: ['js/classes/*.js'],
     },
   ]),
-  new ChromeExtensionReloader({
-    port: 9090, // Which port use to create the server
-    reloadPage: true, // Force the reload of the page also
-    entries: { // The entries used for the content/background scripts
-      background: 'background', // *REQUIRED
-    },
-  }),
 ];
 
 const config = {
@@ -44,6 +37,16 @@ const config = {
 module.exports = (env, argv) => {
   if (argv.mode === 'development') {
     config.devtool = 'cheap-module-source-map'; // https://stackoverflow.com/questions/48047150/refused-to-evaluate-a-string-as-javascript-because-unsafe-eval-is-not-an-allow
+
+    buildPlugins.push(
+        new ChromeExtensionReloader({
+          port: 9090, // Which port use to create the server
+          reloadPage: true, // Force the reload of the page also
+          entries: { // The entries used for the content/background scripts
+            background: 'background', // *REQUIRED
+          },
+        })
+    );
   }
   return config;
 };
