@@ -9,12 +9,13 @@
   },
   "background": {
     "scripts" : [
-      "js/webrequest.js"
+      "js/background.js"
     ]
   },
   "permissions": [
     "http://*/*",
     "https://*/*",
+    "tabs",
     "webRequest"
   ]
 }
