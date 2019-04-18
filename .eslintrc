@@ -4,16 +4,14 @@
     "webextensions": true,
     "es6": true
   },
-  //"extends": "eslint:recommended",
-  "extends": "google",
+  "parserOptions": {
+    "sourceType": "module"
+  },
+  "extends": [/*"eslint:recommended",*/ "google"],
   "rules": {
     "linebreak-style": [
       "error",
       "windows"
-    ],
-    "quotes": [
-      "error",
-      "double"
     ],
     "semi": [
       "error",
