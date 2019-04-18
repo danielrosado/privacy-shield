@@ -1,46 +1,58 @@
 'use strict';
 
+import ThirdPartyDomainsManager from './classes/third-party-domains-manager';
+import {GET_THIRD_PARTY_DOMAINS_TAB} from './utils/constants';
 
-import ThirdPartiesManager from './classes/ThirdPartiesManager';
+const tpdm = new ThirdPartyDomainsManager();
 
-
-const tpm = new ThirdPartiesManager();
-// debug
-window.tpm = tpm;
+/**
+ * Check if request details are valid
+ * @param {WebRequestBodyDetails} requestDetails
+ * @return  {boolean}
+ */
+function validRequestDetails(requestDetails) {
+  return requestDetails.url !== undefined
+     && (requestDetails.tabId !== undefined && requestDetails.tabId > 0);
+}
 
 /**
  * Handles the onBeforeRequest event
  * @param {WebRequestBodyDetails} details
  */
 function onBeforeRequestListener(details) {
-  if (details.tabId === -1) {
+  if (!validRequestDetails(details)) {
     return;
   }
   chrome.tabs.get(details.tabId, function(tab) {
-    if (tpm.isThirdParty(tab.url, details.url)) {
-      tpm.addThirdPartyFromTab(details.url, details.tabId);
+    if (tpdm.isThirdPartyDomain(tab.url, details.url)) {
+      tpdm.addThirdPartyDomainFromTab(details.url, details.tabId);
     }
   });
 }
 
-
 /**
- *  Start the tabs API event listeners
+ *  Starting API events listeners
  */
+
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'loading' && changeInfo.url !== undefined) {
-    tpm.clearTabDomains(tabId);
+    tpdm.clearThirdPartyDomainsByTab(tabId);
   }
 });
 
 chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-  tpm.removeThirdPartiesFromTab(tabId);
+  tpdm.removeTab(tabId);
 });
 
-/**
- *  Start the webrequest API event listeners
- */
 chrome.webRequest.onBeforeRequest.addListener(
     onBeforeRequestListener,
     {urls: ['http://*/*', 'https://*/*']}
 );
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  let response;
+  if (message.type === GET_THIRD_PARTY_DOMAINS_TAB) {
+    response = tpdm.getThirdPartyDomainsByTab(message.tabId);
+  }
+  sendResponse(response);
+});
