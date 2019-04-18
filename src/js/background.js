@@ -1,7 +1,7 @@
 'use strict';
 
 import ThirdPartyDomainsManager from './classes/third-party-domains-manager';
-import {GET_THIRD_PARTY_DOMAINS_TAB} from './utils/constants';
+import {MSG_TYPE} from './utils/constants';
 
 const tpdm = new ThirdPartyDomainsManager();
 
@@ -12,7 +12,7 @@ const tpdm = new ThirdPartyDomainsManager();
  */
 function validRequestDetails(requestDetails) {
   return requestDetails.url !== undefined
-     && (requestDetails.tabId !== undefined && requestDetails.tabId > 0);
+    && (requestDetails.tabId !== undefined && requestDetails.tabId > 0);
 }
 
 /**
@@ -23,7 +23,7 @@ function onBeforeRequestListener(details) {
   if (!validRequestDetails(details)) {
     return;
   }
-  chrome.tabs.get(details.tabId, function(tab) {
+  chrome.tabs.get(details.tabId, (tab) => {
     if (tpdm.isThirdPartyDomain(tab.url, details.url)) {
       tpdm.addThirdPartyDomainFromTab(details.url, details.tabId);
     }
@@ -50,9 +50,9 @@ chrome.webRequest.onBeforeRequest.addListener(
 );
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  let response;
-  if (message.type === GET_THIRD_PARTY_DOMAINS_TAB) {
-    response = tpdm.getThirdPartyDomainsByTab(message.tabId);
+  const response = {};
+  if (message.type === MSG_TYPE.GET_THIRD_PARTY_DOMAINS) {
+    response.domains = tpdm.getThirdPartyDomainsByTab(message.tabId);
   }
   sendResponse(response);
 });

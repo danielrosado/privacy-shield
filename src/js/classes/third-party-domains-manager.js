@@ -15,7 +15,7 @@ export default class ThirdPartyDomainsManager {
   }
 
   /**
-   * Check if an URL belongs to a third-party domain
+   * Checks if an URL belongs to a third-party domain
    * @param {string} tabURL
    * @param {string} requestURL
    * @return {boolean}

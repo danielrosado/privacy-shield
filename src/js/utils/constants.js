@@ -1,3 +1,5 @@
 'use strict';
 
-export const GET_THIRD_PARTY_DOMAINS_TAB = 'gettpdomainstab';
+export const MSG_TYPE = {
+  GET_THIRD_PARTY_DOMAINS: 0,
+};
