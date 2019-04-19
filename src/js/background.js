@@ -1,55 +1,43 @@
 'use strict';
 
-import DomainsManager from './classes/domains-manager';
+import TabsManager from './classes/tabs-manager';
 import {MSG_TYPE} from './utils/constants';
 
-const dm = new DomainsManager();
+const tm = new TabsManager();
 
-window.dm = dm;
+window.tm = tm;
 
-/**
- * Check if request details are valid
- * @param {WebRequestBodyDetails} requestDetails
- * @return  {boolean}
- */
-function validRequestDetails(requestDetails) {
-  // TODO check frame
-  return requestDetails.url !== undefined
-    && (requestDetails.tabId !== undefined && requestDetails.tabId > 0);
-}
 
 /**
  * Handles the onBeforeRequest event
  * @param {WebRequestBodyDetails} details
+ * @return {Object}
  */
 function onBeforeRequestListener(details) {
-  if (!validRequestDetails(details)) {
+  if (details.url.startsWith('chrome://')) {
     return;
   }
-  chrome.tabs.get(details.tabId, (tab) => {
-    if (chrome.runtime.lastError) {
-      return;
-    }
-    const tabDomain = dm.getDomain(tab.url);
-    const requestDomain = dm.getDomain(details.url);
-    if (dm.isThirdPartyDomain(tabDomain, requestDomain)) {
-      dm.addDomainFromTab(requestDomain, details.tabId);
-    }
-  });
+  if (details.type === 'main_frame') {
+    tm.removeTab(details.tabId);
+    return;
+  }
+  if (details.tabId < 0) {
+    return {cancel: true};
+  }
+  if (!tm.isTabSaved(details.tabId)) {
+    tm.saveTabWithURL(details.tabId, details.initiator);
+  }
+  const requestDomain = tm.getDomain(details.url);
+  if (tm.isThirdPartyDomain(details.tabId, requestDomain)) {
+    tm.addThirdPartyDomainFromTab(requestDomain, details.tabId);
+  }
 }
 
 /**
  *  Starting API events listeners
  */
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'loading' && changeInfo.url !== undefined) {
-    dm.clearDomainsByTab(tabId);
-  }
-});
-
-chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-  dm.removeTab(tabId);
+chrome.tabs.onRemoved.addListener((tabId) => {
+  tm.removeTab(tabId);
 });
 
 chrome.webRequest.onBeforeRequest.addListener(
@@ -60,7 +48,7 @@ chrome.webRequest.onBeforeRequest.addListener(
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const response = {};
   if (message.type === MSG_TYPE.GET_THIRD_PARTY_DOMAINS) {
-    response.domains = dm.getDomainsByTab(message.tabId);
+    response.domains = tm.getThirdPartyDomainsByTab(message.tabId);
   }
   sendResponse(response);
 });
