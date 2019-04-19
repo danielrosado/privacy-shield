@@ -1,9 +1,11 @@
 'use strict';
 
-import ThirdPartyDomainsManager from './classes/third-party-domains-manager';
+import DomainsManager from './classes/domains-manager';
 import {MSG_TYPE} from './utils/constants';
 
-const tpdm = new ThirdPartyDomainsManager();
+const dm = new DomainsManager();
+
+window.dm = dm;
 
 /**
  * Check if request details are valid
@@ -11,6 +13,7 @@ const tpdm = new ThirdPartyDomainsManager();
  * @return  {boolean}
  */
 function validRequestDetails(requestDetails) {
+  // TODO check frame
   return requestDetails.url !== undefined
     && (requestDetails.tabId !== undefined && requestDetails.tabId > 0);
 }
@@ -24,8 +27,13 @@ function onBeforeRequestListener(details) {
     return;
   }
   chrome.tabs.get(details.tabId, (tab) => {
-    if (tpdm.isThirdPartyDomain(tab.url, details.url)) {
-      tpdm.addThirdPartyDomainFromTab(details.url, details.tabId);
+    if (chrome.runtime.lastError) {
+      return;
+    }
+    const tabDomain = dm.getDomain(tab.url);
+    const requestDomain = dm.getDomain(details.url);
+    if (dm.isThirdPartyDomain(tabDomain, requestDomain)) {
+      dm.addDomainFromTab(requestDomain, details.tabId);
     }
   });
 }
@@ -36,12 +44,12 @@ function onBeforeRequestListener(details) {
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'loading' && changeInfo.url !== undefined) {
-    tpdm.clearThirdPartyDomainsByTab(tabId);
+    dm.clearDomainsByTab(tabId);
   }
 });
 
 chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-  tpdm.removeTab(tabId);
+  dm.removeTab(tabId);
 });
 
 chrome.webRequest.onBeforeRequest.addListener(
@@ -52,7 +60,7 @@ chrome.webRequest.onBeforeRequest.addListener(
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const response = {};
   if (message.type === MSG_TYPE.GET_THIRD_PARTY_DOMAINS) {
-    response.domains = tpdm.getThirdPartyDomainsByTab(message.tabId);
+    response.domains = dm.getDomainsByTab(message.tabId);
   }
   sendResponse(response);
 });
