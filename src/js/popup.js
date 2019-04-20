@@ -1,6 +1,6 @@
 'use strict';
 
-import {MSG_TYPE} from './utils/constants';
+import {MSG_TYPE, DOMAIN_STATUS} from './utils/constants';
 
 /**
  * Initializes the popup script
@@ -13,14 +13,16 @@ function init() {
    */
   function printThirdPartyDomains(domains, tab) {
     const body = document.querySelector('body');
-    let p = document.createElement('p');
+    const p = document.createElement('p');
     p.innerText = `${domains.length} third-parties found at ${tab.url}`;
     body.appendChild(p);
     body.appendChild(document.createElement('hr'));
     for (const domain of domains) {
-      p = document.createElement('p');
-      p.innerText = `${domain.subdomain}.${domain.domain}.${domain.tld}`;
-      body.appendChild(p);
+      const div = document.createElement('div');
+      div.innerHTML = `${domain.subdomain}.${domain.domain}.${domain.tld}
+&nbsp;&nbsp;&nbsp;&nbsp
+<b>${domain.status === DOMAIN_STATUS.BLOCKED ? 'BLOCKED' : 'ALLOWED'}</b>`;
+      body.appendChild(div);
     }
   }
 

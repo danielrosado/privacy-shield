@@ -1,13 +1,17 @@
 'use strict';
 
 import TabsManager from './classes/tabs-manager';
-import {MSG_TYPE} from './utils/constants';
+import {MSG_TYPE, DOMAIN_STATUS} from './utils/constants';
 
+// ****************************
+// Global variables declaration
+// ****************************
 const tm = new TabsManager();
+let trackers;
 
-window.tm = tm;
-
-
+// **********************
+// Functions declarations
+// **********************
 /**
  * Handles the onBeforeRequest event
  * @param {WebRequestBodyDetails} details
@@ -15,11 +19,11 @@ window.tm = tm;
  */
 function onBeforeRequestListener(details) {
   if (details.url.startsWith('chrome://')) {
-    return;
+    return {};
   }
   if (details.type === 'main_frame') {
     tm.removeTab(details.tabId);
-    return;
+    return {};
   }
   if (details.tabId < 0) {
     return {cancel: true};
@@ -28,27 +32,60 @@ function onBeforeRequestListener(details) {
     tm.saveTabWithURL(details.tabId, details.initiator);
   }
   const requestDomain = tm.getDomain(details.url);
-  if (tm.isThirdPartyDomain(details.tabId, requestDomain)) {
-    tm.addThirdPartyDomainFromTab(requestDomain, details.tabId);
+  if (!tm.isThirdPartyDomain(details.tabId, requestDomain)) {
+    return {};
   }
+  if (trackers.has(`${requestDomain.domain}.${requestDomain.tld}`)) {
+    requestDomain.status = DOMAIN_STATUS.BLOCKED;
+  } else {
+    requestDomain.status = DOMAIN_STATUS.ALLOWED;
+  }
+  tm.addThirdPartyDomainFromTab(requestDomain, details.tabId);
+  if (requestDomain.status === DOMAIN_STATUS.BLOCKED) {
+    return {cancel: true};
+  }
+  return {};
 }
 
 /**
- *  Starting API events listeners
+ *  Adds API events listeners
  */
-chrome.tabs.onRemoved.addListener((tabId) => {
-  tm.removeTab(tabId);
-});
+function addListeners() {
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    tm.removeTab(tabId);
+  });
 
-chrome.webRequest.onBeforeRequest.addListener(
-    onBeforeRequestListener,
-    {urls: ['http://*/*', 'https://*/*']}
-);
+  chrome.webRequest.onBeforeRequest.addListener(
+      onBeforeRequestListener,
+      {urls: ['http://*/*', 'https://*/*']},
+      ['blocking']
+  );
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const response = {};
-  if (message.type === MSG_TYPE.GET_THIRD_PARTY_DOMAINS) {
-    response.domains = tm.getThirdPartyDomainsByTab(message.tabId);
-  }
-  sendResponse(response);
-});
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    const response = {};
+    if (message.type === MSG_TYPE.GET_THIRD_PARTY_DOMAINS) {
+      response.domains = tm.getThirdPartyDomainsByTab(message.tabId);
+    }
+    sendResponse(response);
+  });
+}
+
+/**
+ * Initializes background script
+ */
+function init() {
+  // Loads the Disconnect.me simple trackers list
+  fetch(chrome.runtime.getURL('data/data.json'))
+      .then((response) => response.json())
+      .then((response) => {
+        trackers = new Set(response.trackers);
+        window.tm = tm; // Debug purposes
+        window.trackers = trackers; // Debug purposes
+        addListeners();
+      });
+}
+
+// ************************
+// Starts background script
+// ************************
+init();
