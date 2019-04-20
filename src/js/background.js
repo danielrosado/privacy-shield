@@ -6,18 +6,20 @@ import {MSG_TYPE, DOMAIN_STATUS} from './utils/constants';
 // ****************************
 // Global variables declaration
 // ****************************
+
 const tm = new TabsManager();
 let trackers;
 
 // **********************
 // Functions declarations
 // **********************
+
 /**
  * Handles the onBeforeRequest event
  * @param {WebRequestBodyDetails} details
  * @return {Object}
  */
-function onBeforeRequestListener(details) {
+const onBeforeRequestListener = (details) => {
   if (details.url.startsWith('chrome://')) {
     return {};
   }
@@ -45,12 +47,12 @@ function onBeforeRequestListener(details) {
     return {cancel: true};
   }
   return {};
-}
+};
 
 /**
  *  Adds API events listeners
  */
-function addListeners() {
+const initEventListeners = () => {
   chrome.tabs.onRemoved.addListener((tabId) => {
     tm.removeTab(tabId);
   });
@@ -68,12 +70,13 @@ function addListeners() {
     }
     sendResponse(response);
   });
-}
+};
 
-/**
- * Initializes background script
- */
-function init() {
+// ************************
+// Starts background script
+// ************************
+
+(() => {
   // Loads the Disconnect.me simple trackers list
   fetch(chrome.runtime.getURL('data/data.json'))
       .then((response) => response.json())
@@ -81,11 +84,6 @@ function init() {
         trackers = new Set(response.trackers);
         window.tm = tm; // Debug purposes
         window.trackers = trackers; // Debug purposes
-        addListeners();
+        initEventListeners();
       });
-}
-
-// ************************
-// Starts background script
-// ************************
-init();
+})();
