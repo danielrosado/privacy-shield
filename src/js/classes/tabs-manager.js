@@ -63,10 +63,9 @@ export default class TabsManager {
     if (!tabDomains.hasOwnProperty('thirdPartyDomains')) {
       tabDomains.thirdPartyDomains = [];
     }
-    const found = tabDomains.thirdPartyDomains.some((d) => {
-      return d.domain === domain.domain && d.subdomain === domain.subdomain
-        && d.tld === domain.tld;
-    });
+    const found = tabDomains.thirdPartyDomains.some((d) =>
+      d.domain === domain.domain && d.subdomain === domain.subdomain
+        && d.tld === domain.tld);
     if (!found) {
       tabDomains.thirdPartyDomains.push(domain);
     }
@@ -78,9 +77,8 @@ export default class TabsManager {
    * @return {array}
    */
   getThirdPartyDomainsByTab(tabId) {
-    let domains = this.tabDomainsMap.get(tabId).thirdPartyDomains;
-    domains = domains.sort((d1, d2) => d1.domain.localeCompare(d2.domain));
-    return domains;
+    // domains.sort((d1, d2) => d1.domain.localeCompare(d2.domain));
+    return this.tabDomainsMap.get(tabId).thirdPartyDomains;
   }
 
   /**
