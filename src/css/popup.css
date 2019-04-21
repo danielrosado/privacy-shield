@@ -1,3 +1,12 @@
 body {
-    min-width: 300px
+    width: 400px;
+    border: #e9ecef solid thick;
+}
+
+.container {
+    padding: 0.75rem;
+}
+
+.card-body {
+    padding: 0.75rem;
 }

@@ -33,6 +33,14 @@ const config = {
     filename: '[name].js',
   },
   plugins: buildPlugins,
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+    ],
+  },
 };
 
 module.exports = (env, argv) => {
