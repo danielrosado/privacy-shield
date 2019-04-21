@@ -50,7 +50,7 @@ const onBeforeRequestListener = (details) => {
 };
 
 /**
- *  Adds API events listeners
+ *  Initializes API events listeners
  */
 const initEventListeners = () => {
   chrome.tabs.onRemoved.addListener((tabId) => {
@@ -78,7 +78,7 @@ const initEventListeners = () => {
 
 (() => {
   // Loads the Disconnect.me simple trackers list
-  fetch(chrome.runtime.getURL('data/data.json'))
+  fetch('data/data.json')
       .then((response) => response.json())
       .then((response) => {
         trackers = new Set(response.trackers);

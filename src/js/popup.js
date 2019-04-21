@@ -8,11 +8,10 @@ import {MSG_TYPE, DOMAIN_STATUS} from './utils/constants';
 // **********************
 
 /**
- * Print third-party domains
+ * Loads table of third-party domains
  * @param {array} domains
- * @param {Tab} tab
  */
-const printThirdPartyDomains = (domains, tab) => {
+const loadThirdPartyDomainsTable = (domains) => {
   const $cardBody = $('.card-body');
   let blockedCount = 0;
   for (const domain of domains) {
@@ -34,9 +33,13 @@ const printThirdPartyDomains = (domains, tab) => {
     $tr.append($tdStatus);
     $cardBody.find('tbody').append($tr);
   }
-  $cardBody.find('.card-text').html(`<b>${domains.length}</b> third-parties
- where found at current web site.<br><b>${blockedCount}</b> where blocked.`);
-  $('.card').show();
+  const message = `<b>${domains.length}</b> third-party
+ domains were found at current web site.<br><b>${blockedCount}</b> third-party
+ domains were detected as trackers and they were blocked.`;
+  $cardBody.find('.card-text').html(message);
+  if (domains.length) {
+    $cardBody.find('.table-responsive').show();
+  }
 };
 
 // ************************
@@ -49,7 +52,7 @@ $(function() {
       'type': MSG_TYPE.GET_THIRD_PARTY_DOMAINS,
       'tabId': tabs[0].id,
     }, (response) => {
-      printThirdPartyDomains(response.domains, tabs[0]);
+      loadThirdPartyDomainsTable(response.domains);
     });
   });
 });

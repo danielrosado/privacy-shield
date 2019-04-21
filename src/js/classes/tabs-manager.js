@@ -77,8 +77,8 @@ export default class TabsManager {
    * @return {array}
    */
   getThirdPartyDomainsByTab(tabId) {
-    // domains.sort((d1, d2) => d1.domain.localeCompare(d2.domain));
-    return this.tabDomainsMap.get(tabId).thirdPartyDomains;
+    const tab = this.tabDomainsMap.get(tabId);
+    return tab ? tab.thirdPartyDomains : [];
   }
 
   /**
