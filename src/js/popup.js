@@ -1,8 +1,6 @@
 'use strict';
 
-import $ from 'jquery/dist/jquery.min';
-import 'bootstrap/dist/js/bootstrap.min.js';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import $ from 'jquery';
 import {MSG_TYPE, DOMAIN_STATUS} from './utils/constants';
 
 // **********************
