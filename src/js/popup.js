@@ -1,5 +1,6 @@
 'use strict';
 
+import $ from 'jquery';
 import {MSG_TYPE, DOMAIN_STATUS} from './utils/constants';
 
 // **********************
@@ -7,22 +8,37 @@ import {MSG_TYPE, DOMAIN_STATUS} from './utils/constants';
 // **********************
 
 /**
- * Print third-party domains
+ * Loads table of third-party domains
  * @param {array} domains
- * @param {Tab} tab
  */
-const printThirdPartyDomains = (domains, tab) => {
-  const body = document.querySelector('body');
-  const p = document.createElement('p');
-  p.innerText = `${domains.length} third-parties found at ${tab.url}`;
-  body.appendChild(p);
-  body.appendChild(document.createElement('hr'));
+const loadThirdPartyDomainsTable = (domains) => {
+  const $cardBody = $('.card-body');
+  let blockedCount = 0;
   for (const domain of domains) {
-    const div = document.createElement('div');
-    div.innerHTML = `${domain.subdomain}.${domain.domain}.${domain.tld}
-&nbsp;&nbsp;&nbsp;&nbsp;
-<b>${domain.status === DOMAIN_STATUS.BLOCKED ? 'BLOCKED' : 'ALLOWED'}</b>`;
-    body.appendChild(div);
+    const $tr = $('<tr>');
+    const $tdDomain = $('<td>');
+    $tdDomain.text(`${domain.subdomain}.${domain.domain}.${domain.tld}`);
+    $tr.append($tdDomain);
+    const $tdStatus = $('<td>');
+    const $badge = $('<span>', {'class': 'badge'});
+    if (domain.status === DOMAIN_STATUS.BLOCKED) {
+      $badge.addClass('badge-danger');
+      $badge.text('Blocked');
+      blockedCount++;
+    } else {
+      $badge.addClass('badge-success');
+      $badge.text('Allowed');
+    }
+    $tdStatus.append($badge);
+    $tr.append($tdStatus);
+    $cardBody.find('tbody').append($tr);
+  }
+  const message = `<b>${domains.length}</b> third-party
+ domains were found at current web site.<br><b>${blockedCount}</b> third-party
+ domains were detected as trackers and they were blocked.`;
+  $cardBody.find('.card-text').html(message);
+  if (domains.length) {
+    $cardBody.find('.table-responsive').show();
   }
 };
 
@@ -30,13 +46,13 @@ const printThirdPartyDomains = (domains, tab) => {
 // Starts popup script
 // ************************
 
-document.addEventListener('DOMContentLoaded', () => {
+$(function() {
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     chrome.runtime.sendMessage({
       'type': MSG_TYPE.GET_THIRD_PARTY_DOMAINS,
       'tabId': tabs[0].id,
     }, (response) => {
-      printThirdPartyDomains(response.domains, tabs[0]);
+      loadThirdPartyDomainsTable(response.domains);
     });
   });
 });

@@ -1,9 +1,5 @@
 /* eslint-disable max-len */
 
-/*
- *   Webpack config script for Privacy Shield development
- */
-
 'use strict';
 
 const path = require('path');
@@ -18,7 +14,7 @@ const buildPlugins = [
     {
       from: `${SRC_DIR}`,
       to: `${DIST_DIR}`,
-      ignore: ['js/classes/*.js', 'js/utils/*.js'],
+      ignore: ['*.js'],
     },
   ]),
 ];
@@ -27,12 +23,23 @@ const config = {
   entry: {
     background: `${SRC_DIR}/js/background.js`,
     popup: `${SRC_DIR}/js/popup.js`,
+    bootstrap: `${SRC_DIR}/js/vendor/bootstrap.js`,
   },
   output: {
-    path: `${DIST_DIR}/js`,
-    filename: '[name].js',
+    path: `${DIST_DIR}`,
+    filename: (chunkData) => {
+      return chunkData.chunk.name === 'bootstrap' ? 'js/vendor/[name].js' : 'js/[name].js';
+    },
   },
   plugins: buildPlugins,
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+    ],
+  },
 };
 
 module.exports = (env, argv) => {
