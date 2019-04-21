@@ -3,9 +3,15 @@
   "version": "1.0.0",
   "description": "A Google Chrome Privacy Extension",
   "manifest_version": 2,
+  "icons": {
+    "16": "images/icons/icon16.png",
+    "48": "images/icons/icon48.png",
+    "128": "images/icons/icon128.png"
+  },
   "browser_action": {
     "default_title": "Privacy Shield",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": "images/icons/icon16.png"
   },
   "background": {
     "scripts" : [
