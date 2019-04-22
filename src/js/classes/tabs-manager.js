@@ -19,7 +19,7 @@ export default class TabsManager {
    * @param {string} url
    * @return {Object}
    */
-  getDomain(url) {
+  getParsedDomain(url) {
     return parseDomain(url);
   }
 
@@ -37,8 +37,8 @@ export default class TabsManager {
    * @param {number} tabId
    * @param {string} url
    */
-  saveTabWithURL(tabId, url) {
-    this.tabDomainsMap.set(tabId, {firstPartyDomain: parseDomain(url)});
+  saveTabAndURL(tabId, url) {
+    this.tabDomainsMap.set(tabId, {host: parseDomain(url)});
   }
 
   /**
@@ -48,7 +48,7 @@ export default class TabsManager {
    * @return {boolean}
    */
   isThirdPartyDomain(tabId, requestDomain) {
-    const tabDomain = this.tabDomainsMap.get(tabId).firstPartyDomain;
+    const tabDomain = this.tabDomainsMap.get(tabId).host;
     return tabDomain.domain !== requestDomain.domain ||
       tabDomain.tld !== requestDomain.tld;
   };

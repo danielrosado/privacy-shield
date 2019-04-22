@@ -1,6 +1,6 @@
 'use strict';
 
-import {DOMAIN_STATUS, MSG_TYPE} from './utils/constants';
+import {DOMAIN_STATE, MSG_TYPE} from './utils/constants';
 
 // **********************
 // Functions declarations
@@ -14,6 +14,7 @@ const loadThirdPartyDomainsTable = (domains) => {
   const cardBody = document.querySelector('.card-body');
   let blockedCount = 0;
   for (const domain of domains) {
+    // Add new row
     const row = document.createElement('tr');
     const dataDomain = document.createElement('td');
     dataDomain.innerText = `${domain.subdomain}.${domain.domain}.${domain.tld}`;
@@ -21,7 +22,7 @@ const loadThirdPartyDomainsTable = (domains) => {
     const dataStatus = document.createElement('td');
     const badge = document.createElement('span');
     badge.className = 'badge';
-    if (domain.status === DOMAIN_STATUS.BLOCKED) {
+    if (domain.state === DOMAIN_STATE.BLOCKED) {
       badge.className += ' badge-danger';
       badge.innerText = 'Blocked';
       blockedCount++;
@@ -33,6 +34,7 @@ const loadThirdPartyDomainsTable = (domains) => {
     row.appendChild(dataStatus);
     cardBody.querySelector('tbody').appendChild(row);
   }
+  // Add info
   cardBody.querySelector('.card-text').innerHTML =
     `<b>${domains.length}</b> third-party domains were found at current web
 site.<br><b>${blockedCount}</b> third-party domains were detected as trackers
