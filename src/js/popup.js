@@ -1,7 +1,6 @@
 'use strict';
 
-import $ from 'jquery';
-import {MSG_TYPE, DOMAIN_STATUS} from './utils/constants';
+import {DOMAIN_STATUS, MSG_TYPE} from './utils/constants';
 
 // **********************
 // Functions declarations
@@ -12,33 +11,34 @@ import {MSG_TYPE, DOMAIN_STATUS} from './utils/constants';
  * @param {array} domains
  */
 const loadThirdPartyDomainsTable = (domains) => {
-  const $cardBody = $('.card-body');
+  const cardBody = document.querySelector('.card-body');
   let blockedCount = 0;
   for (const domain of domains) {
-    const $tr = $('<tr>');
-    const $tdDomain = $('<td>');
-    $tdDomain.text(`${domain.subdomain}.${domain.domain}.${domain.tld}`);
-    $tr.append($tdDomain);
-    const $tdStatus = $('<td>');
-    const $badge = $('<span>', {'class': 'badge'});
+    const row = document.createElement('tr');
+    const dataDomain = document.createElement('td');
+    dataDomain.innerText = `${domain.subdomain}.${domain.domain}.${domain.tld}`;
+    row.appendChild(dataDomain);
+    const dataStatus = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = 'badge';
     if (domain.status === DOMAIN_STATUS.BLOCKED) {
-      $badge.addClass('badge-danger');
-      $badge.text('Blocked');
+      badge.className += ' badge-danger';
+      badge.innerText = 'Blocked';
       blockedCount++;
     } else {
-      $badge.addClass('badge-success');
-      $badge.text('Allowed');
+      badge.className += ' badge-success';
+      badge.innerText = 'Allowed';
     }
-    $tdStatus.append($badge);
-    $tr.append($tdStatus);
-    $cardBody.find('tbody').append($tr);
+    dataStatus.appendChild(badge);
+    row.appendChild(dataStatus);
+    cardBody.querySelector('tbody').appendChild(row);
   }
-  const message = `<b>${domains.length}</b> third-party
- domains were found at current web site.<br><b>${blockedCount}</b> third-party
- domains were detected as trackers and they were blocked.`;
-  $cardBody.find('.card-text').html(message);
+  cardBody.querySelector('.card-text').innerHTML =
+    `<b>${domains.length}</b> third-party domains were found at current web
+site.<br><b>${blockedCount}</b> third-party domains were detected as trackers
+and they were blocked.`;
   if (domains.length) {
-    $cardBody.find('.table-responsive').show();
+    cardBody.querySelector('.table-responsive').style.display = 'block';
   }
 };
 
@@ -46,7 +46,7 @@ const loadThirdPartyDomainsTable = (domains) => {
 // Starts popup script
 // ************************
 
-$(function() {
+document.addEventListener('DOMContentLoaded', () => {
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     chrome.runtime.sendMessage({
       'type': MSG_TYPE.GET_THIRD_PARTY_DOMAINS,
