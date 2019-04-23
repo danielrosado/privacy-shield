@@ -4,35 +4,44 @@
     <meta charset="UTF-8">
     <title>Privacy Shield</title>
     <script src="js/vendor/bootstrap.js"></script>
+    <script src="js/vendor/fontawesome.js"></script>
     <script src="js/popup.js"></script>
     <link rel="stylesheet" type="text/css" href="css/popup.css"/>
 </head>
 <body>
-    <div class="container">
-        <div class="row" style="padding: 0.75rem">
-            <div class="col-2">
-                <img alt="Privcy Shield Icon" src="images/icons/icon48.png">
-            </div>
-            <div class="col-8" style="padding-left: 0">
-                <h2 style="margin-bottom: 0;margin-top: .2rem;">Privacy Shield</h2>
-            </div>
+<div class="container">
+    <div class="row">
+        <div class="col-2">
+            <img alt="Privcy Shield Icon" src="images/icons/icon48.png">
         </div>
-        <div class="card">
-            <div class="card-body">
-                <p class="card-text"></p>
-                <div class="table-responsive border" style="display: none">
-                    <table class="table">
-                        <thead class="thead-light">
-                            <tr>
-                                <th scope="col">Third-party domain</th>
-                                <th scope="col">State</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+        <div class="col-8" style="padding-left: 0">
+            <h2>Privacy Shield</h2>
+        </div>
+        <div class="col-2">
+            <button class="btn" id="btn-info" data-toggle="tooltip" data-placement="top" title="Open information">
+                <i class="fa fa-info-circle"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <p class="card-text" style="display: none">
+                <span id="num-domains"></span> third-party domains were found at current web site.<br>
+                <span id="num-trackers"></span> third-party domains were detected as trackers and they were blocked.
+            </p>
+            <div class="table-responsive border" style="display: none">
+                <table class="table">
+                    <thead class="thead-light">
+                    <tr>
+                        <th scope="col">Third-party domain</th>
+                        <th scope="col">State</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 </body>
 </html>

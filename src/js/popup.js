@@ -1,3 +1,5 @@
+/* global $ */
+
 'use strict';
 
 import {DOMAIN_STATE, MSG_TYPE} from './utils/constants';
@@ -10,51 +12,82 @@ import {DOMAIN_STATE, MSG_TYPE} from './utils/constants';
  * Loads table of third-party domains
  * @param {array} domains
  */
-const loadThirdPartyDomainsTable = (domains) => {
-  const cardBody = document.querySelector('.card-body');
+function loadThirdPartyDomainsTable(domains) {
+  const $cardBody = $('.card-body');
   let blockedCount = 0;
   for (const domain of domains) {
     // Add new row
-    const row = document.createElement('tr');
-    const dataDomain = document.createElement('td');
-    dataDomain.innerText = `${domain.subdomain}.${domain.domain}.${domain.tld}`;
-    row.appendChild(dataDomain);
-    const dataStatus = document.createElement('td');
-    const badge = document.createElement('span');
-    badge.className = 'badge';
+    const $row = $('<tr>');
+    const $dataDomain = $('<td>');
+    $dataDomain.text(`${domain.subdomain}.${domain.domain}.${domain.tld}`);
+    $row.append($dataDomain);
+    const $dataState = $('<td>');
+    const $badge = $('<span>', {class: 'badge'});
     if (domain.state === DOMAIN_STATE.BLOCKED) {
-      badge.className += ' badge-danger';
-      badge.innerText = 'Blocked';
+      $badge.addClass('badge-danger');
+      $badge.append('<i class="fa fa-ban"></i> Blocked');
       blockedCount++;
     } else {
-      badge.className += ' badge-success';
-      badge.innerText = 'Allowed';
+      $badge.addClass('badge-success');
+      $badge.append('<i class="fa fa-check"></i> Allowed');
     }
-    dataStatus.appendChild(badge);
-    row.appendChild(dataStatus);
-    cardBody.querySelector('tbody').appendChild(row);
+    $dataState.append($badge);
+    $row.append($dataState);
+    $cardBody.find('tbody').append($row);
   }
-  // Add info
-  cardBody.querySelector('.card-text').innerHTML =
-    `<b>${domains.length}</b> third-party domains were found at current web
-site.<br><b>${blockedCount}</b> third-party domains were detected as trackers
-and they were blocked.`;
+  // Add info and show it
+  const $text = $cardBody.find('.card-text');
+  $text.find('#num-domains').html(`<b>${domains.length}</b>`);
+  $text.find('#num-trackers').html(`<b>${blockedCount}</b>`);
+  $text.show();
   if (domains.length) {
-    cardBody.querySelector('.table-responsive').style.display = 'block';
+    $cardBody.find('.table-responsive').show();
   }
-};
+}
+
+/**
+ * Opens or actives a new tab with the given URL
+ * @param {string} urlInfo
+ */
+function createOrActiveTab(urlInfo) {
+  chrome.tabs.query({}, (tabs) => {
+    let tabId;
+    for (const tab of tabs) {
+      if (tab.url === urlInfo) {
+        tabId = tab.id;
+        break;
+      }
+    }
+    if (tabId !== undefined) {
+      chrome.tabs.update(tabId, {selected: true});
+    } else {
+      chrome.tabs.create({url: urlInfo, active: true});
+    }
+  });
+}
+
+/**
+ * Initialiazes DOM event Listeners
+ */
+function initEventListeners() {
+  $('#btn-info').click(function() {
+    createOrActiveTab(chrome.runtime.getURL('information.html'));
+  });
+}
 
 // ************************
 // Starts popup script
 // ************************
 
-document.addEventListener('DOMContentLoaded', () => {
+$(function() {
+  $('[data-toggle="tooltip"]').tooltip();
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     chrome.runtime.sendMessage({
       'type': MSG_TYPE.GET_THIRD_PARTY_DOMAINS,
       'tabId': tabs[0].id,
     }, (response) => {
       loadThirdPartyDomainsTable(response.domains);
+      initEventListeners();
     });
   });
 });
