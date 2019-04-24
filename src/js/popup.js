@@ -19,7 +19,7 @@ function loadThirdPartyDomainsTable(domains) {
     // Add new row
     const $row = $('<tr>');
     const $dataDomain = $('<td>');
-    $dataDomain.text(`${domain.subdomain}.${domain.domain}.${domain.tld}`);
+    $dataDomain.text(domain.name);
     $row.append($dataDomain);
     const $dataState = $('<td>');
     const $badge = $('<span>', {class: 'badge'});
@@ -47,13 +47,13 @@ function loadThirdPartyDomainsTable(domains) {
 
 /**
  * Opens or actives a new tab with the given URL
- * @param {string} urlInfo
+ * @param {string} url
  */
-function createOrActiveTab(urlInfo) {
+function createOrActiveTab(url) {
   chrome.tabs.query({}, (tabs) => {
     let tabId;
     for (const tab of tabs) {
-      if (tab.url === urlInfo) {
+      if (tab.url === url) {
         tabId = tab.id;
         break;
       }
@@ -61,7 +61,7 @@ function createOrActiveTab(urlInfo) {
     if (tabId !== undefined) {
       chrome.tabs.update(tabId, {selected: true});
     } else {
-      chrome.tabs.create({url: urlInfo, active: true});
+      chrome.tabs.create({url: url, active: true});
     }
   });
 }

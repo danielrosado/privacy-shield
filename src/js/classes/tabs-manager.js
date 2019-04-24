@@ -1,7 +1,5 @@
 'use strict';
 
-import parseDomain from 'parse-domain';
-
 /**
  * TabsManager class for managing the domains
  * found while loading a tab
@@ -12,15 +10,6 @@ export default class TabsManager {
    */
   constructor() {
     this.tabDomainsMap = new Map();
-  }
-
-  /**
-   * Returns a domain object given an URL
-   * @param {string} url
-   * @return {Object}
-   */
-  getParsedDomain(url) {
-    return parseDomain(url);
   }
 
   /**
@@ -35,10 +24,10 @@ export default class TabsManager {
   /**
    * Saves a tab with its first-party domain
    * @param {number} tabId
-   * @param {string} url
+   * @param {object} domain
    */
-  saveTabAndURL(tabId, url) {
-    this.tabDomainsMap.set(tabId, {host: parseDomain(url)});
+  saveTabAndDomain(tabId, domain) {
+    this.tabDomainsMap.set(tabId, {firstPartyDomain: domain});
   }
 
   /**
@@ -48,17 +37,17 @@ export default class TabsManager {
    * @return {boolean}
    */
   isThirdPartyDomain(tabId, requestDomain) {
-    const tabDomain = this.tabDomainsMap.get(tabId).host;
+    const tabDomain = this.tabDomainsMap.get(tabId).firstPartyDomain;
     return tabDomain.domain !== requestDomain.domain ||
       tabDomain.tld !== requestDomain.tld;
-  };
+  }
 
   /**
-   * Add a third-party domain from a tab
-   * @param {Object} domain
+   * Adds a third-party domain from a tab
    * @param {number} tabId
+   * @param {Object} domain
    */
-  addThirdPartyDomainFromTab(domain, tabId) {
+  addThirdPartyDomainToTab(tabId, domain) {
     const tabDomains = this.tabDomainsMap.get(tabId);
     if (!tabDomains.hasOwnProperty('thirdPartyDomains')) {
       tabDomains.thirdPartyDomains = [];
@@ -78,7 +67,18 @@ export default class TabsManager {
    */
   getThirdPartyDomainsByTab(tabId) {
     const tab = this.tabDomainsMap.get(tabId);
-    return tab ? tab.thirdPartyDomains : [];
+    return !tab ? [] : tab.thirdPartyDomains.map((d) => ({
+      name: `${d.subdomain}.${d.domain}.${d.tld}`,
+      state: d.state,
+    }));
+  }
+
+  /**
+   * Removes the added tab
+   * @param {number} tabId
+   */
+  removeTab(tabId) {
+    this.tabDomainsMap.delete(tabId);
   }
 
   /**
@@ -89,14 +89,6 @@ export default class TabsManager {
     if (this.tabDomainsMap.has(tabId)) {
       this.tabDomainsMap.get(tabId).thirdPartyDomains = [];
     }
-  }
-
-  /**
-   * Removes the added tab
-   * @param {number} tabId
-   */
-  removeTab(tabId) {
-    this.tabDomainsMap.delete(tabId);
   }
 
   /**

@@ -1,5 +1,6 @@
 'use strict';
 
+import parseDomain from 'parse-domain';
 import TabsManager from './classes/tabs-manager';
 import {MSG_TYPE, DOMAIN_STATE} from './utils/constants';
 
@@ -15,17 +16,17 @@ let trackers;
 // **********************
 
 /**
- * Handles the onBeforeRequest event
+ * Handles the onBeforeRequest synchronous event
  * @param {WebRequestBodyDetails} details
  * @return {Object}
  */
-const onBeforeRequestListener = (details) => {
+function onBeforeRequestListener(details) {
   if (details.url.startsWith('chrome://')) {
     return {};
   }
   if (details.type === 'main_frame') {
     tm.removeTab(details.tabId);
-    tm.saveTabAndURL(details.tabId, details.url);
+    tm.saveTabAndDomain(details.tabId, parseDomain(details.url));
     return {};
   }
   if (details.tabId < 0) {
@@ -34,26 +35,26 @@ const onBeforeRequestListener = (details) => {
   if (!tm.isTabSaved(details.tabId)) {
     return {};
   }
-  const requestDomain = tm.getParsedDomain(details.url);
+  const requestDomain = parseDomain(details.url);
   if (!tm.isThirdPartyDomain(details.tabId, requestDomain)) {
     return {};
   }
+  // Set third-party domain state and blocking response
+  const blockingResponse = {};
   if (trackers.has(`${requestDomain.domain}.${requestDomain.tld}`)) {
     requestDomain.state = DOMAIN_STATE.BLOCKED;
+    blockingResponse.cancel = true;
   } else {
     requestDomain.state = DOMAIN_STATE.ALLOWED;
   }
-  tm.addThirdPartyDomainFromTab(requestDomain, details.tabId);
-  if (requestDomain.state === DOMAIN_STATE.BLOCKED) {
-    return {cancel: true};
-  }
-  return {};
-};
+  tm.addThirdPartyDomainToTab(details.tabId, requestDomain);
+  return blockingResponse;
+}
 
 /**
- *  Initializes API events listeners
+ * Initializes Chrome API events listeners
  */
-const initEventListeners = () => {
+function initEventListeners() {
   chrome.tabs.onRemoved.addListener((tabId) => {
     tm.removeTab(tabId);
   });
@@ -71,13 +72,13 @@ const initEventListeners = () => {
     }
     sendResponse(response);
   });
-};
+}
 
 // ************************
 // Starts background script
 // ************************
 
-(() => {
+(function() {
   // Loads the Disconnect.me simple trackers list
   fetch('data/data.json')
       .then((response) => response.json())
