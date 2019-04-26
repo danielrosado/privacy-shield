@@ -119,13 +119,13 @@ function initEventListeners() {
   chrome.webRequest.onBeforeSendHeaders.addListener(
       onBeforeSendHeadersCallback,
       {urls: ['http://*/*', 'https://*/*']},
-      ['requestHeaders', 'extraHeaders']
+      ['blocking', 'requestHeaders', 'extraHeaders']
   );
 
   chrome.webRequest.onHeadersReceived.addListener(
       onHeadersReceivedCallback,
       {urls: ['http://*/*', 'https://*/*']},
-      ['responseHeaders', 'extraHeaders']
+      ['blocking', 'responseHeaders', 'extraHeaders']
   );
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
