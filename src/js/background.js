@@ -10,6 +10,7 @@ import {MSG_TYPE, DOMAIN_STATE} from './utils/constants';
 
 const tm = new TabsManager();
 let trackers;
+let yellowList;
 
 // **********************
 // Functions declarations
@@ -18,9 +19,9 @@ let trackers;
 /**
  * Handles the onBeforeRequest synchronous event
  * @param {WebRequestBodyDetails} details
- * @return {Object}
+ * @return {BlockingResponse} blockingResponse
  */
-function onBeforeRequestListener(details) {
+function onBeforeRequestCallback(details) {
   if (details.url.startsWith('chrome://')) {
     return {};
   }
@@ -39,9 +40,12 @@ function onBeforeRequestListener(details) {
   if (!tm.isThirdPartyDomain(details.tabId, requestDomain)) {
     return {};
   }
-  // Set third-party domain state and blocking response
+  // Set third-party domain state and BlockingResponse object
   const blockingResponse = {};
-  if (trackers.has(`${requestDomain.domain}.${requestDomain.tld}`)) {
+  const d = `${requestDomain.domain}.${requestDomain.tld}`;
+  if (yellowList.has(d)) {
+    requestDomain.state = DOMAIN_STATE.COOKIE_BLOCKED;
+  } else if (trackers.has(d) ) {
     requestDomain.state = DOMAIN_STATE.BLOCKED;
     blockingResponse.cancel = true;
   } else {
@@ -49,6 +53,53 @@ function onBeforeRequestListener(details) {
   }
   tm.addThirdPartyDomainToTab(details.tabId, requestDomain);
   return blockingResponse;
+}
+
+/**
+ * Handles the onBeforeSendHeaders synchronous event
+ * @param {WebRequestHeadersDetails} details
+ * @return {BlockingResponse} blockingResponse
+ */
+function onBeforeSendHeadersCallback(details) {
+  if (details.url.startsWith('chrome://')) {
+    return {};
+  }
+  if (!tm.isTabSaved(details.tabId)) {
+    return {};
+  }
+  const requestDomain = parseDomain(details.url);
+  const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
+  if (state === DOMAIN_STATE.COOKIE_BLOCKED) {
+    const requestHeaders = details.requestHeaders.filter((header) => {
+      const headerName = header.name.toLowerCase();
+      return headerName !== 'cookie' && headerName !== 'referer';
+    });
+    return {requestHeaders: requestHeaders};
+  }
+  return {};
+}
+
+/**
+ * Handles the onBeforeSendHeaders synchronous event
+ * @param {WebResponseHeadersDetails} details
+ * @return {BlockingResponse} blockingResponse
+ */
+function onHeadersReceivedCallback(details) {
+  if (details.url.startsWith('chrome://')) {
+    return {};
+  }
+  if (!tm.isTabSaved(details.tabId)) {
+    return {};
+  }
+  const requestDomain = parseDomain(details.url);
+  const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
+  if (state === DOMAIN_STATE.COOKIE_BLOCKED) {
+    const responseHeaders = details.responseHeaders.filter((header) =>
+      header.name.toLowerCase() !== 'set-cookie'
+    );
+    return {responseHeaders: responseHeaders};
+  }
+  return {};
 }
 
 /**
@@ -60,9 +111,21 @@ function initEventListeners() {
   });
 
   chrome.webRequest.onBeforeRequest.addListener(
-      onBeforeRequestListener,
+      onBeforeRequestCallback,
       {urls: ['http://*/*', 'https://*/*']},
       ['blocking']
+  );
+
+  chrome.webRequest.onBeforeSendHeaders.addListener(
+      onBeforeSendHeadersCallback,
+      {urls: ['http://*/*', 'https://*/*']},
+      ['requestHeaders', 'extraHeaders']
+  );
+
+  chrome.webRequest.onHeadersReceived.addListener(
+      onHeadersReceivedCallback,
+      {urls: ['http://*/*', 'https://*/*']},
+      ['responseHeaders', 'extraHeaders']
   );
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -80,12 +143,15 @@ function initEventListeners() {
 
 (function() {
   // Loads the Disconnect.me simple trackers list
+  // and the Privacy Badger yellow list
   fetch('data/data.json')
       .then((response) => response.json())
       .then((response) => {
         trackers = new Set(response.trackers);
+        yellowList = new Set(response.yellowList);
         window.tm = tm; // Debug purposes
         window.trackers = trackers; // Debug purposes
+        window.yellowList = yellowList; // Debug purposes
         initEventListeners();
       });
 })();
