@@ -2,7 +2,7 @@
 
 import parseDomain from 'parse-domain';
 import TabsManager from './classes/tabs-manager';
-import {MSG_TYPE, DOMAIN_STATE} from './utils/constants';
+import {MessageType, DomainState} from './utils/constants';
 
 // ****************************
 // Global variables declaration
@@ -44,12 +44,12 @@ function onBeforeRequestCallback(details) {
   const blockingResponse = {};
   const d = `${requestDomain.domain}.${requestDomain.tld}`;
   if (yellowList.has(d)) {
-    requestDomain.state = DOMAIN_STATE.COOKIE_BLOCKED;
+    requestDomain.state = DomainState.COOKIE_BLOCKED;
   } else if (trackers.has(d) ) {
-    requestDomain.state = DOMAIN_STATE.BLOCKED;
+    requestDomain.state = DomainState.BLOCKED;
     blockingResponse.cancel = true;
   } else {
-    requestDomain.state = DOMAIN_STATE.ALLOWED;
+    requestDomain.state = DomainState.ALLOWED;
   }
   tm.addThirdPartyDomainToTab(details.tabId, requestDomain);
   return blockingResponse;
@@ -69,7 +69,7 @@ function onBeforeSendHeadersCallback(details) {
   }
   const requestDomain = parseDomain(details.url);
   const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
-  if (state === DOMAIN_STATE.COOKIE_BLOCKED) {
+  if (state === DomainState.COOKIE_BLOCKED) {
     const requestHeaders = details.requestHeaders.filter((header) => {
       const headerName = header.name.toLowerCase();
       return headerName !== 'cookie' && headerName !== 'referer';
@@ -93,7 +93,7 @@ function onHeadersReceivedCallback(details) {
   }
   const requestDomain = parseDomain(details.url);
   const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
-  if (state === DOMAIN_STATE.COOKIE_BLOCKED) {
+  if (state === DomainState.COOKIE_BLOCKED) {
     const responseHeaders = details.responseHeaders.filter((header) =>
       header.name.toLowerCase() !== 'set-cookie'
     );
@@ -130,7 +130,7 @@ function initEventListeners() {
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const response = {};
-    if (message.type === MSG_TYPE.GET_THIRD_PARTY_DOMAINS) {
+    if (message.type === MessageType.GET_THIRD_PARTY_DOMAINS) {
       response.domains = tm.getThirdPartyDomainsByTab(message.tabId);
     }
     sendResponse(response);

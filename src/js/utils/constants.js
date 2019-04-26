@@ -1,10 +1,10 @@
 'use strict';
 
-export const MSG_TYPE = Object.freeze({
+export const MessageType = Object.freeze({
   GET_THIRD_PARTY_DOMAINS: 0,
 });
 
-export const DOMAIN_STATE = Object.freeze({
+export const DomainState = Object.freeze({
   ALLOWED: 0,
   BLOCKED: 1,
   COOKIE_BLOCKED: 2,

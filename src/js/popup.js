@@ -2,7 +2,7 @@
 
 'use strict';
 
-import {DOMAIN_STATE, MSG_TYPE} from './utils/constants';
+import {DomainState, MessageType} from './utils/constants';
 
 // **********************
 // Functions declarations
@@ -24,12 +24,12 @@ function loadThirdPartyDomainsTable(domains) {
     const $dataState = $('<td>');
     const $badge = $('<span>', {class: 'badge'});
     switch (domain.state) {
-      case DOMAIN_STATE.BLOCKED:
+      case DomainState.BLOCKED:
         $badge.addClass('badge-danger');
         $badge.append('<i class="fa fa-ban"></i> Blocked');
         blockedCount++;
         break;
-      case DOMAIN_STATE.COOKIE_BLOCKED:
+      case DomainState.COOKIE_BLOCKED:
         $badge.addClass('badge-warning');
         $badge.append('<i class="fa fa-warning"></i> Cookies');
         break;
@@ -89,7 +89,7 @@ $(function() {
   $('[data-toggle="tooltip"]').tooltip();
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     chrome.runtime.sendMessage({
-      'type': MSG_TYPE.GET_THIRD_PARTY_DOMAINS,
+      'type': MessageType.GET_THIRD_PARTY_DOMAINS,
       'tabId': tabs[0].id,
     }, (response) => {
       loadThirdPartyDomainsTable(response.domains);
