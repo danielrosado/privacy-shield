@@ -23,13 +23,19 @@ function loadThirdPartyDomainsTable(domains) {
     $row.append($dataDomain);
     const $dataState = $('<td>');
     const $badge = $('<span>', {class: 'badge'});
-    if (domain.state === DOMAIN_STATE.BLOCKED) {
-      $badge.addClass('badge-danger');
-      $badge.append('<i class="fa fa-ban"></i> Blocked');
-      blockedCount++;
-    } else {
-      $badge.addClass('badge-success');
-      $badge.append('<i class="fa fa-check"></i> Allowed');
+    switch (domain.state) {
+      case DOMAIN_STATE.BLOCKED:
+        $badge.addClass('badge-danger');
+        $badge.append('<i class="fa fa-ban"></i> Blocked');
+        blockedCount++;
+        break;
+      case DOMAIN_STATE.COOKIE_BLOCKED:
+        $badge.addClass('badge-warning');
+        $badge.append('<i class="fa fa-warning"></i> Cookies');
+        break;
+      default:
+        $badge.addClass('badge-success');
+        $badge.append('<i class="fa fa-check"></i> Allowed');
     }
     $dataState.append($badge);
     $row.append($dataState);
@@ -41,7 +47,7 @@ function loadThirdPartyDomainsTable(domains) {
   $text.find('#num-trackers').html(`<b>${blockedCount}</b>`);
   $text.show();
   if (domains.length) {
-    $cardBody.find('.table-responsive').show();
+    $cardBody.find('#table-domains').show();
   }
 }
 

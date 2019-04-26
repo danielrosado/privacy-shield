@@ -1,19 +1,19 @@
 body {
-    width: 500px;
-    border: #e9ecef solid thick
+    width: 450px;
+    border: #e9ecef solid thick;
 }
 
 .container {
-    padding: 0.75rem;
+    padding: .75rem;
 }
 
 .container > .row {
-    padding: 0.75rem;
+    padding: .75rem;
 }
 
-.container > .row h2 {
+.container > .row h3 {
     margin-bottom: 0;
-    margin-top: .2rem
+    margin-top: .35rem
 }
 
 .container > .row .fa {
@@ -22,4 +22,38 @@ body {
 
 .card-body {
     padding: 0.75rem;
+}
+
+/* https://stackoverflow.com/questions/54286705/bootstrap-4-table-with-the-scrollable-body-and-header-fixed */
+
+table {
+    display: flex;
+    flex-flow: column;
+    width: 100%;
+}
+
+thead {
+    flex: 0 0 auto;
+}
+
+tbody {
+    flex: 1 1 auto;
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 300px;
+}
+
+tr {
+    width: 100%;
+    display: table;
+    table-layout: fixed;
+}
+
+th:nth-child(1), td:nth-child(1) {
+    width: 75%;
+}
+
+th:nth-child(2), td:nth-child(2) {
+    width: 25%;
 }
