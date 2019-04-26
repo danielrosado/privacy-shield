@@ -1,5 +1,6 @@
 'use strict';
 
+import parseDomain from 'parse-domain';
 import TabsManager from './classes/tabs-manager';
 import {MSG_TYPE, DOMAIN_STATE} from './utils/constants';
 
@@ -9,23 +10,24 @@ import {MSG_TYPE, DOMAIN_STATE} from './utils/constants';
 
 const tm = new TabsManager();
 let trackers;
+let yellowList;
 
 // **********************
 // Functions declarations
 // **********************
 
 /**
- * Handles the onBeforeRequest event
+ * Handles the onBeforeRequest synchronous event
  * @param {WebRequestBodyDetails} details
- * @return {Object}
+ * @return {BlockingResponse} blockingResponse
  */
-const onBeforeRequestListener = (details) => {
+function onBeforeRequestCallback(details) {
   if (details.url.startsWith('chrome://')) {
     return {};
   }
   if (details.type === 'main_frame') {
     tm.removeTab(details.tabId);
-    tm.saveTabAndURL(details.tabId, details.url);
+    tm.saveTabAndDomain(details.tabId, parseDomain(details.url));
     return {};
   }
   if (details.tabId < 0) {
@@ -34,34 +36,96 @@ const onBeforeRequestListener = (details) => {
   if (!tm.isTabSaved(details.tabId)) {
     return {};
   }
-  const requestDomain = tm.getParsedDomain(details.url);
+  const requestDomain = parseDomain(details.url);
   if (!tm.isThirdPartyDomain(details.tabId, requestDomain)) {
     return {};
   }
-  if (trackers.has(`${requestDomain.domain}.${requestDomain.tld}`)) {
+  // Set third-party domain state and BlockingResponse object
+  const blockingResponse = {};
+  const d = `${requestDomain.domain}.${requestDomain.tld}`;
+  if (yellowList.has(d)) {
+    requestDomain.state = DOMAIN_STATE.COOKIE_BLOCKED;
+  } else if (trackers.has(d) ) {
     requestDomain.state = DOMAIN_STATE.BLOCKED;
+    blockingResponse.cancel = true;
   } else {
     requestDomain.state = DOMAIN_STATE.ALLOWED;
   }
-  tm.addThirdPartyDomainFromTab(requestDomain, details.tabId);
-  if (requestDomain.state === DOMAIN_STATE.BLOCKED) {
-    return {cancel: true};
-  }
-  return {};
-};
+  tm.addThirdPartyDomainToTab(details.tabId, requestDomain);
+  return blockingResponse;
+}
 
 /**
- *  Initializes API events listeners
+ * Handles the onBeforeSendHeaders synchronous event
+ * @param {WebRequestHeadersDetails} details
+ * @return {BlockingResponse} blockingResponse
  */
-const initEventListeners = () => {
+function onBeforeSendHeadersCallback(details) {
+  if (details.url.startsWith('chrome://')) {
+    return {};
+  }
+  if (!tm.isTabSaved(details.tabId)) {
+    return {};
+  }
+  const requestDomain = parseDomain(details.url);
+  const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
+  if (state === DOMAIN_STATE.COOKIE_BLOCKED) {
+    const requestHeaders = details.requestHeaders.filter((header) => {
+      const headerName = header.name.toLowerCase();
+      return headerName !== 'cookie' && headerName !== 'referer';
+    });
+    return {requestHeaders: requestHeaders};
+  }
+  return {};
+}
+
+/**
+ * Handles the onBeforeSendHeaders synchronous event
+ * @param {WebResponseHeadersDetails} details
+ * @return {BlockingResponse} blockingResponse
+ */
+function onHeadersReceivedCallback(details) {
+  if (details.url.startsWith('chrome://')) {
+    return {};
+  }
+  if (!tm.isTabSaved(details.tabId)) {
+    return {};
+  }
+  const requestDomain = parseDomain(details.url);
+  const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
+  if (state === DOMAIN_STATE.COOKIE_BLOCKED) {
+    const responseHeaders = details.responseHeaders.filter((header) =>
+      header.name.toLowerCase() !== 'set-cookie'
+    );
+    return {responseHeaders: responseHeaders};
+  }
+  return {};
+}
+
+/**
+ * Initializes Chrome API events listeners
+ */
+function initEventListeners() {
   chrome.tabs.onRemoved.addListener((tabId) => {
     tm.removeTab(tabId);
   });
 
   chrome.webRequest.onBeforeRequest.addListener(
-      onBeforeRequestListener,
+      onBeforeRequestCallback,
       {urls: ['http://*/*', 'https://*/*']},
       ['blocking']
+  );
+
+  chrome.webRequest.onBeforeSendHeaders.addListener(
+      onBeforeSendHeadersCallback,
+      {urls: ['http://*/*', 'https://*/*']},
+      ['requestHeaders', 'extraHeaders']
+  );
+
+  chrome.webRequest.onHeadersReceived.addListener(
+      onHeadersReceivedCallback,
+      {urls: ['http://*/*', 'https://*/*']},
+      ['responseHeaders', 'extraHeaders']
   );
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -71,20 +135,23 @@ const initEventListeners = () => {
     }
     sendResponse(response);
   });
-};
+}
 
 // ************************
 // Starts background script
 // ************************
 
-(() => {
+(function() {
   // Loads the Disconnect.me simple trackers list
+  // and the Privacy Badger yellow list
   fetch('data/data.json')
       .then((response) => response.json())
       .then((response) => {
         trackers = new Set(response.trackers);
+        yellowList = new Set(response.yellowList);
         window.tm = tm; // Debug purposes
         window.trackers = trackers; // Debug purposes
+        window.yellowList = yellowList; // Debug purposes
         initEventListeners();
       });
 })();

@@ -1,7 +1,5 @@
 'use strict';
 
-import parseDomain from 'parse-domain';
-
 /**
  * TabsManager class for managing the domains
  * found while loading a tab
@@ -11,16 +9,7 @@ export default class TabsManager {
    * TabsManager constructor
    */
   constructor() {
-    this.tabDomainsMap = new Map();
-  }
-
-  /**
-   * Returns a domain object given an URL
-   * @param {string} url
-   * @return {Object}
-   */
-  getParsedDomain(url) {
-    return parseDomain(url);
+    this._tabDomainsMap = new Map();
   }
 
   /**
@@ -29,16 +18,16 @@ export default class TabsManager {
    * @return {boolean}
    */
   isTabSaved(tabId) {
-    return this.tabDomainsMap.has(tabId);
+    return this._tabDomainsMap.has(tabId);
   }
 
   /**
    * Saves a tab with its first-party domain
    * @param {number} tabId
-   * @param {string} url
+   * @param {object} domain
    */
-  saveTabAndURL(tabId, url) {
-    this.tabDomainsMap.set(tabId, {host: parseDomain(url)});
+  saveTabAndDomain(tabId, domain) {
+    this._tabDomainsMap.set(tabId, {firstPartyDomain: domain});
   }
 
   /**
@@ -48,46 +37,64 @@ export default class TabsManager {
    * @return {boolean}
    */
   isThirdPartyDomain(tabId, requestDomain) {
-    const tabDomain = this.tabDomainsMap.get(tabId).host;
+    const tabDomain = this._tabDomainsMap.get(tabId).firstPartyDomain;
     return tabDomain.domain !== requestDomain.domain ||
       tabDomain.tld !== requestDomain.tld;
-  };
+  }
 
   /**
-   * Add a third-party domain from a tab
-   * @param {Object} domain
+   * Adds a third-party domain from a tab
    * @param {number} tabId
+   * @param {Object} domain
    */
-  addThirdPartyDomainFromTab(domain, tabId) {
-    const tabDomains = this.tabDomainsMap.get(tabId);
+  addThirdPartyDomainToTab(tabId, domain) {
+    const tabDomains = this._tabDomainsMap.get(tabId);
     if (!tabDomains.hasOwnProperty('thirdPartyDomains')) {
       tabDomains.thirdPartyDomains = [];
     }
     const found = tabDomains.thirdPartyDomains.some((d) =>
-      d.domain === domain.domain && d.subdomain === domain.subdomain
-        && d.tld === domain.tld);
+      TabsManager.equalsDomains(d, domain));
     if (!found) {
       tabDomains.thirdPartyDomains.push(domain);
     }
   }
 
   /**
-   * Returns the list of domains found in a tab
+   * Returns the list of third-party domains found in a tab
    * @param {number} tabId
    * @return {array}
    */
   getThirdPartyDomainsByTab(tabId) {
-    const tab = this.tabDomainsMap.get(tabId);
-    return tab ? tab.thirdPartyDomains : [];
+    const tab = this._tabDomainsMap.get(tabId);
+    if (!tab || !tab.hasOwnProperty('thirdPartyDomains')) {
+      return [];
+    }
+    return tab.thirdPartyDomains.map((d) => ({
+      name: `${d.subdomain}.${d.domain}.${d.tld}`,
+      state: d.state,
+    }));
   }
 
   /**
-   * Clears the domains added from a tab
+   * Returns the state of a third-party domain if exists
    * @param {number} tabId
+   * @param {object} domain
+   * @return {undefined|string}
    */
-  clearThirdPartyDomainsByTab(tabId) {
-    if (this.tabDomainsMap.has(tabId)) {
-      this.tabDomainsMap.get(tabId).thirdPartyDomains = [];
+  getThirdPartyDomainState(tabId, domain) {
+    const tab = this._tabDomainsMap.get(tabId);
+    if (!tab || !tab.hasOwnProperty('thirdPartyDomains')) {
+      return;
+    }
+    let found;
+    for (const d of tab.thirdPartyDomains) {
+      if (TabsManager.equalsDomains(d, domain)) {
+        found = d;
+        break;
+      }
+    }
+    if (found !== undefined) {
+      return found.state;
     }
   }
 
@@ -96,13 +103,35 @@ export default class TabsManager {
    * @param {number} tabId
    */
   removeTab(tabId) {
-    this.tabDomainsMap.delete(tabId);
+    this._tabDomainsMap.delete(tabId);
+  }
+
+  /**
+   * Clears the domains added from a tab
+   * @param {number} tabId
+   */
+  clearThirdPartyDomainsByTab(tabId) {
+    if (this._tabDomainsMap.has(tabId)) {
+      this._tabDomainsMap.get(tabId).thirdPartyDomains = [];
+    }
   }
 
   /**
    * Removes all added tabs
    */
   clear() {
-    this.tabDomainsMap.clear();
+    this._tabDomainsMap.clear();
+  }
+
+  /**
+   * Returns true if two domains are equals
+   * @param {object} d1
+   * @param {object} d2
+   * @return {boolean}
+   */
+  static equalsDomains(d1, d2) {
+    return d1.domain === d2.domain
+      && d1.subdomain === d2.subdomain
+      && d1.tld === d2.tld;
   }
 }

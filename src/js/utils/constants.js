@@ -7,4 +7,5 @@ export const MSG_TYPE = Object.freeze({
 export const DOMAIN_STATE = Object.freeze({
   ALLOWED: 0,
   BLOCKED: 1,
+  COOKIE_BLOCKED: 2,
 });
