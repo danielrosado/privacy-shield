@@ -2,6 +2,8 @@
 
 export const MessageType = Object.freeze({
   GET_TAB_DOMAINS: 0,
+  EXTENSION_ENABLEMENT: 1,
+  CLOSE_POPUP: 2,
 });
 
 export const DomainState = Object.freeze({
@@ -10,3 +12,4 @@ export const DomainState = Object.freeze({
   ALLOWED: 2,
 });
 
+export const EXTENSION_DISABLED_DOMAINS_KEY = 'extensionsDisabledDomains';

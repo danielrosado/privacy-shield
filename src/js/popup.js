@@ -2,7 +2,7 @@
 
 'use strict';
 
-import {MessageType, DomainState} from './utils/constants';
+import {DomainState, MessageType} from './utils/constants';
 
 // **********************
 // Functions declarations
@@ -30,14 +30,15 @@ function createOrActiveTab(url) {
 }
 
 /**
- * Loads table of third-party domains
- * @param {Object} domains
+ * Shows the information and the table of third-party domains
+ * when the extension is enabled for that domain
+ * @param {Object} response
  */
-function showTabDomainsCard(domains) {
+function showExtensionEnabledCard(response) {
   const $cardBody = $('.card-body');
   let blockedCount = 0;
-  for (const domain of domains.thirdPartyDomains) {
-    // Add new row
+  // Builds third-party domains table
+  for (const domain of response.thirdPartyDomains) {
     const $row = $('<tr>');
     const $dataDomain = $('<td>');
     $dataDomain.text(domain.name);
@@ -63,23 +64,71 @@ function showTabDomainsCard(domains) {
     $cardBody.find('tbody').append($row);
   }
   // Add info and show it
-  const $text = $cardBody.find('.card-text');
-  if (domains.firstPartyDomain) {
-    $text.find('#fp-domain').html(`<b>${domains.firstPartyDomain}</b>`);
+  const $text = $cardBody.find('#extensionEnabledCardText');
+  if (response.firstPartyDomain) {
+    $text.find('.domainName').html(`<b>${response.firstPartyDomain}</b>`);
   }
-  $text.find('#num-trackers').html(`<b>${blockedCount}</b>`);
+  $text.find('#numTrackers').html(`<b>${blockedCount}</b>`);
   $text.show();
-  if (domains.thirdPartyDomains.length) {
-    $cardBody.find('#table-domains').show();
+  if (response.thirdPartyDomains.length) {
+    $cardBody.find('#tableDomains').show();
   }
+}
+
+/**
+ * Shows the information when the extension is disabled at that domain
+ * @param {object} response
+ */
+function showExtensionDisabledCard(response) {
+  const $cardBody = $('.card-body');
+  const $text = $cardBody.find('#extensionDisabledCardText');
+  $text.find('.domainName').html(`<b>${response.firstPartyDomain}</b>`);
+  const $cardHeader = $('.card-header');
+  $cardHeader.find('#enablementSwitch').prop('checked', false);
+  $cardHeader.find('#enablementState').text('disabled');
+  $text.show();
+}
+
+/**
+ * Sends a message from popup
+ * @param {object} message
+ * @param {function} responseCallback
+ */
+function sendMessageFromPopup(message, responseCallback=undefined) {
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    message.tabId = tabs[0].id;
+    if (responseCallback !== undefined) {
+      chrome.runtime.sendMessage(message, responseCallback);
+    } else {
+      chrome.runtime.sendMessage(message);
+    }
+  });
+}
+
+/**
+ * Initialiazes Chrome API event listeners
+ */
+function initChromeEventListeners() {
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === MessageType.CLOSE_POPUP) {
+      window.close();
+    }
+  });
 }
 
 /**
  * Initialiazes DOM event Listeners
  */
-function initEventListeners() {
-  $('#btn-info').click(function() {
+function initDOMEventListeners() {
+  $('#btnInfo').click(function() {
     createOrActiveTab(chrome.runtime.getURL('information.html'));
+  });
+  $('#enablementSwitch').change(function() {
+    const enabled = this.checked;
+    sendMessageFromPopup({
+      'type': MessageType.EXTENSION_ENABLEMENT,
+      'enabled': enabled,
+    });
   });
 }
 
@@ -88,14 +137,14 @@ function initEventListeners() {
 // ************************
 
 $(function() {
+  initChromeEventListeners();
+  initDOMEventListeners();
   $('[data-toggle="tooltip"]').tooltip();
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    chrome.runtime.sendMessage({
-      'type': MessageType.GET_TAB_DOMAINS,
-      'tabId': tabs[0].id,
-    }, (response) => {
-      showTabDomainsCard(response);
-      initEventListeners();
-    });
+  sendMessageFromPopup({'type': MessageType.GET_TAB_DOMAINS}, (response) => {
+    if (response.extensionEnabled) {
+      showExtensionEnabledCard(response);
+    } else {
+      showExtensionDisabledCard(response);
+    }
   });
 });

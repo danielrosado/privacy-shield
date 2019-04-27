@@ -2,19 +2,58 @@
 
 import parseDomain from 'parse-domain';
 import TabsManager from './classes/tabs-manager';
-import {MessageType, DomainState} from './utils/constants';
+import {MessageType, DomainState, EXTENSION_DISABLED_DOMAINS_KEY}
+  from './utils/constants';
 
 // ****************************
 // Global variables declaration
 // ****************************
 
 const tm = new TabsManager();
+let extensionDisabledDomains;
 let trackers;
 let yellowList;
 
 // **********************
 // Functions declarations
 // **********************
+
+/**
+ * Return if extension is enabled at given domain or not
+ * @param {object} domain
+ * @return {boolean}
+ */
+function isExtensionEnabledAtDomain(domain) {
+  const domainStr = `${domain.subdomain}.${domain.domain}.${domain.tld}`
+      .replace(/^\.|\.$/g, '');
+  return !extensionDisabledDomains.has(domainStr);
+}
+
+/**
+ * Enables or disables the domain of the given tab
+ * @param {number} tabId
+ * @param {boolean} enabled
+ */
+function updateExtensionEnablement(tabId, enabled) {
+  const domain = tm.getFirstPartyDomainByTab(tabId);
+  if (!domain) {
+    return;
+  }
+  if (enabled) {
+    extensionDisabledDomains.delete(domain);
+  } else {
+    extensionDisabledDomains.add(domain);
+  }
+  tm.setExtensionEnablementAtTab(tabId, enabled);
+  const items = {
+    [EXTENSION_DISABLED_DOMAINS_KEY]: Array.from(extensionDisabledDomains),
+  };
+  chrome.storage.local.set(items, () => {
+    chrome.tabs.reload(() => {
+      chrome.runtime.sendMessage({'type': MessageType.CLOSE_POPUP});
+    });
+  });
+}
 
 /**
  * Handles the onBeforeRequest synchronous event
@@ -26,11 +65,14 @@ function onBeforeRequestCallback(details) {
     return {};
   }
   if (details.type === 'main_frame') {
+    const domain = parseDomain(details.url);
     tm.removeTab(details.tabId);
-    tm.saveTabAndDomain(details.tabId, parseDomain(details.url));
+    const enabled = isExtensionEnabledAtDomain(domain);
+    tm.saveTabAndDomain(details.tabId, domain, enabled);
     return {};
   }
-  if (!tm.isTabSaved(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId)
+    || !tm.isExtensionEnabledAtTab(details.tabId)) {
     return {};
   }
   const requestDomain = parseDomain(details.url);
@@ -58,10 +100,8 @@ function onBeforeRequestCallback(details) {
  * @return {BlockingResponse} blockingResponse
  */
 function onBeforeSendHeadersCallback(details) {
-  if (details.url.startsWith('chrome://')) {
-    return {};
-  }
-  if (!tm.isTabSaved(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId)
+    || !tm.isExtensionEnabledAtTab(details.tabId)) {
     return {};
   }
   const requestDomain = parseDomain(details.url);
@@ -82,10 +122,8 @@ function onBeforeSendHeadersCallback(details) {
  * @return {BlockingResponse} blockingResponse
  */
 function onHeadersReceivedCallback(details) {
-  if (details.url.startsWith('chrome://')) {
-    return {};
-  }
-  if (!tm.isTabSaved(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId)
+    || !tm.isExtensionEnabledAtTab(details.tabId)) {
     return {};
   }
   const requestDomain = parseDomain(details.url);
@@ -102,7 +140,11 @@ function onHeadersReceivedCallback(details) {
 /**
  * Initializes Chrome API events listeners
  */
-function initEventListeners() {
+function initChromeEventListeners() {
+  chrome.runtime.onInstalled.addListener(() => {
+    chrome.storage.local.set({[EXTENSION_DISABLED_DOMAINS_KEY]: []});
+  });
+
   chrome.tabs.onRemoved.addListener((tabId) => {
     tm.removeTab(tabId);
   });
@@ -126,12 +168,15 @@ function initEventListeners() {
   );
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    let response;
-    if (message.type === MessageType.GET_TAB_DOMAINS) {
-      response = {
-        firstPartyDomain: tm.getFirstPartyDomainByTab(message.tabId),
-        thirdPartyDomains: tm.getThirdPartyDomainsByTab(message.tabId),
-      };
+    const response = {};
+    switch (message.type) {
+      case MessageType.GET_TAB_DOMAINS:
+        response.firstPartyDomain = tm.getFirstPartyDomainByTab(message.tabId);
+        response.thirdPartyDomains = tm.getThirdPartyDomainsByTab(message.tabId);
+        response.extensionEnabled = tm.isExtensionEnabledAtTab(message.tabId);
+        break;
+      case MessageType.EXTENSION_ENABLEMENT:
+        updateExtensionEnablement(message.tabId, message.enabled);
     }
     sendResponse(response);
   });
@@ -142,16 +187,17 @@ function initEventListeners() {
 // ************************
 
 (function() {
-  // Loads the Disconnect.me simple trackers list
-  // and the Privacy Badger yellow list
-  fetch('data/data.json')
-      .then((response) => response.json())
-      .then((response) => {
-        trackers = new Set(response.trackers);
-        yellowList = new Set(response.yellowList);
-        window.tm = tm; // Debug purposes
-        window.trackers = trackers; // Debug purposes
-        window.yellowList = yellowList; // Debug purposes
-        initEventListeners();
-      });
+  // Load storaged settings
+  chrome.storage.local.get(EXTENSION_DISABLED_DOMAINS_KEY, (items) => {
+    extensionDisabledDomains = new Set(items[EXTENSION_DISABLED_DOMAINS_KEY]);
+    // Loads the Disconnect.me simple trackers list
+    // and the Privacy Badger yellow list
+    fetch('data/data.json')
+        .then((response) => response.json())
+        .then((response) => {
+          trackers = new Set(response.trackers);
+          yellowList = new Set(response.yellowList);
+          initChromeEventListeners();
+        });
+  });
 })();
