@@ -2,20 +2,41 @@
 
 'use strict';
 
-import {DomainState, MessageType} from './utils/constants';
+import {MessageType, DomainState} from './utils/constants';
 
 // **********************
 // Functions declarations
 // **********************
 
 /**
- * Loads table of third-party domains
- * @param {array} domains
+ * Opens or actives a new tab with the given URL
+ * @param {string} url
  */
-function loadThirdPartyDomainsTable(domains) {
+function createOrActiveTab(url) {
+  chrome.tabs.query({}, (tabs) => {
+    let tabId;
+    for (const tab of tabs) {
+      if (tab.url === url) {
+        tabId = tab.id;
+        break;
+      }
+    }
+    if (tabId !== undefined) {
+      chrome.tabs.update(tabId, {selected: true});
+    } else {
+      chrome.tabs.create({url: url, active: true});
+    }
+  });
+}
+
+/**
+ * Loads table of third-party domains
+ * @param {Object} domains
+ */
+function showTabDomainsCard(domains) {
   const $cardBody = $('.card-body');
   let blockedCount = 0;
-  for (const domain of domains) {
+  for (const domain of domains.thirdPartyDomains) {
     // Add new row
     const $row = $('<tr>');
     const $dataDomain = $('<td>');
@@ -43,33 +64,14 @@ function loadThirdPartyDomainsTable(domains) {
   }
   // Add info and show it
   const $text = $cardBody.find('.card-text');
-  $text.find('#num-domains').html(`<b>${domains.length}</b>`);
+  if (domains.firstPartyDomain) {
+    $text.find('#fp-domain').html(`<b>${domains.firstPartyDomain}</b>`);
+  }
   $text.find('#num-trackers').html(`<b>${blockedCount}</b>`);
   $text.show();
-  if (domains.length) {
+  if (domains.thirdPartyDomains.length) {
     $cardBody.find('#table-domains').show();
   }
-}
-
-/**
- * Opens or actives a new tab with the given URL
- * @param {string} url
- */
-function createOrActiveTab(url) {
-  chrome.tabs.query({}, (tabs) => {
-    let tabId;
-    for (const tab of tabs) {
-      if (tab.url === url) {
-        tabId = tab.id;
-        break;
-      }
-    }
-    if (tabId !== undefined) {
-      chrome.tabs.update(tabId, {selected: true});
-    } else {
-      chrome.tabs.create({url: url, active: true});
-    }
-  });
 }
 
 /**
@@ -89,10 +91,10 @@ $(function() {
   $('[data-toggle="tooltip"]').tooltip();
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     chrome.runtime.sendMessage({
-      'type': MessageType.GET_THIRD_PARTY_DOMAINS,
+      'type': MessageType.GET_TAB_DOMAINS,
       'tabId': tabs[0].id,
     }, (response) => {
-      loadThirdPartyDomainsTable(response.domains);
+      showTabDomainsCard(response);
       initEventListeners();
     });
   });

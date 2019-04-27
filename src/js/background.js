@@ -18,20 +18,17 @@ let yellowList;
 
 /**
  * Handles the onBeforeRequest synchronous event
- * @param {WebRequestBodyDetails} details
+ * @param {WebRequestDetails} details
  * @return {BlockingResponse} blockingResponse
  */
 function onBeforeRequestCallback(details) {
-  if (details.url.startsWith('chrome://')) {
+  if (details.url.startsWith('chrome://') || details.tabId < 0) {
     return {};
   }
   if (details.type === 'main_frame') {
     tm.removeTab(details.tabId);
     tm.saveTabAndDomain(details.tabId, parseDomain(details.url));
     return {};
-  }
-  if (details.tabId < 0) {
-    return {cancel: true};
   }
   if (!tm.isTabSaved(details.tabId)) {
     return {};
@@ -43,11 +40,11 @@ function onBeforeRequestCallback(details) {
   // Set third-party domain state and BlockingResponse object
   const blockingResponse = {};
   const d = `${requestDomain.domain}.${requestDomain.tld}`;
-  if (yellowList.has(d)) {
-    requestDomain.state = DomainState.COOKIE_BLOCKED;
-  } else if (trackers.has(d) ) {
+  if (trackers.has(d) ) {
     requestDomain.state = DomainState.BLOCKED;
     blockingResponse.cancel = true;
+  } else if (yellowList.has(d)) {
+    requestDomain.state = DomainState.COOKIE_BLOCKED;
   } else {
     requestDomain.state = DomainState.ALLOWED;
   }
@@ -129,9 +126,12 @@ function initEventListeners() {
   );
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    const response = {};
-    if (message.type === MessageType.GET_THIRD_PARTY_DOMAINS) {
-      response.domains = tm.getThirdPartyDomainsByTab(message.tabId);
+    let response;
+    if (message.type === MessageType.GET_TAB_DOMAINS) {
+      response = {
+        firstPartyDomain: tm.getFirstPartyDomainByTab(message.tabId),
+        thirdPartyDomains: tm.getThirdPartyDomainsByTab(message.tabId),
+      };
     }
     sendResponse(response);
   });

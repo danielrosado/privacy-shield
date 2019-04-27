@@ -38,12 +38,12 @@ export default class TabsManager {
    */
   isThirdPartyDomain(tabId, requestDomain) {
     const tabDomain = this._tabDomainsMap.get(tabId).firstPartyDomain;
-    return tabDomain.domain !== requestDomain.domain ||
-      tabDomain.tld !== requestDomain.tld;
+    return tabDomain.domain !== requestDomain.domain
+      || tabDomain.tld !== requestDomain.tld;
   }
 
   /**
-   * Adds a third-party domain from a tab
+   * Adds a third-party domain to a given tab
    * @param {number} tabId
    * @param {Object} domain
    */
@@ -53,14 +53,27 @@ export default class TabsManager {
       tabDomains.thirdPartyDomains = [];
     }
     const found = tabDomains.thirdPartyDomains.some((d) =>
-      TabsManager.equalsDomains(d, domain));
+      TabsManager._equalsDomains(d, domain));
     if (!found) {
       tabDomains.thirdPartyDomains.push(domain);
     }
   }
 
   /**
-   * Returns the list of third-party domains found in a tab
+   * Returns the first-party domain of a given tab
+   * @param {number} tabId
+   * @return {string|undefined}
+   */
+  getFirstPartyDomainByTab(tabId) {
+    const tab = this._tabDomainsMap.get(tabId);
+    if (tab) {
+      const d = tab.firstPartyDomain;
+      return `${d.subdomain}.${d.domain}.${d.tld}`.replace(/^\.|\.$/g, '');
+    }
+  }
+
+  /**
+   * Returns the list of third-party domains of a given tab sorted by state
    * @param {number} tabId
    * @return {array}
    */
@@ -69,17 +82,18 @@ export default class TabsManager {
     if (!tab || !tab.hasOwnProperty('thirdPartyDomains')) {
       return [];
     }
-    return tab.thirdPartyDomains.map((d) => ({
+    const domains = tab.thirdPartyDomains.map((d) => ({
       name: `${d.subdomain}.${d.domain}.${d.tld}`,
       state: d.state,
     }));
+    return domains.sort((d1, d2) => d1.state - d2.state);
   }
 
   /**
    * Returns the state of a third-party domain if exists
    * @param {number} tabId
    * @param {object} domain
-   * @return {undefined|string}
+   * @return {string|undefined}
    */
   getThirdPartyDomainState(tabId, domain) {
     const tab = this._tabDomainsMap.get(tabId);
@@ -88,7 +102,7 @@ export default class TabsManager {
     }
     let found;
     for (const d of tab.thirdPartyDomains) {
-      if (TabsManager.equalsDomains(d, domain)) {
+      if (TabsManager._equalsDomains(d, domain)) {
         found = d;
         break;
       }
@@ -129,7 +143,7 @@ export default class TabsManager {
    * @param {object} d2
    * @return {boolean}
    */
-  static equalsDomains(d1, d2) {
+  static _equalsDomains(d1, d2) {
     return d1.domain === d2.domain
       && d1.subdomain === d2.subdomain
       && d1.tld === d2.tld;
