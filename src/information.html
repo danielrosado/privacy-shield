@@ -4,12 +4,78 @@
     <meta charset="UTF-8">
     <title>Information</title>
     <script src="js/vendor/bootstrap.js"></script>
+    <script src="js/vendor/fontawesome.js"></script>
 </head>
 <body>
-<div>Icons made by
-    <a href="https://www.flaticon.com/authors/icon-works" title="Icon Works" target="_blank">Icon Works</a> from
-    <a href="https://www.flaticon.com/" title="Flaticon" target="_blank">www.flaticon.com</a> is licensed by
-    <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a>
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-1">
+                    <img src="images/icons/icon48.png" alt="Privacy Shield Icon">
+                </div>
+                <div class="col-11">
+                    <h1>Privacy Shield</h1>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div>
+                <p class="card-text"><a href="https://github.com/danielrosado/privacy-shield/" target="_blank">Privacy Shield</a> is a simple Google Chrome Extension which detects and block
+                    third-party trackers. To do this task, Privacy Shield uses two lists.</p>
+                <ul class="list-group" style="margin-bottom: 1rem">
+                    <li class="list-group-item"><a href="https://github.com/disconnectme/disconnect-tracking-protection/" target="_blank">Disconnect.me</a> list of trackers</li>
+                    <li class="list-group-item"><a href="https://www.eff.org/es/node/99095" target="_blank">Privacy Badger</a> yellow list</li>
+                </ul>
+                <p class="card-text">When Privacy Shield intercepts a request to a third party-domain, it analyzes it
+                    and tags it.</p>
+                <ul class="list-group">
+                    <li class="list-group-item">
+                        <div class="row">
+                            <div class="col-1">
+                                <span class="badge badge-danger"><i class="fa fa-ban"></i> Blocked</span>
+                            </div>
+                            <div class="col-11">
+                                The domain request was recognized as a tracker and it was blocked.
+                            </div>
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="row">
+                            <div class="col-1">
+                                <span class="badge badge-warning"><i class="fa fa-warning"></i> Cookies</span></div>
+                            <div class="col-11">
+                                The domain request was found in yellow list. This list allows requests to third-party
+                                domains only for functionality purposes, so the Cookie, Referer and Set-Cookie headers
+                                are deleted before sending the request or receiving the response.
+                            </div>
+                        </div>
+                    </li>
+                    <li class="list-group-item" style="margin-bottom: 1rem">
+                        <div class="row">
+                            <div class="col-1">
+                                <span class="badge badge-success"><i class="fa fa-check"></i> Allowed</span>
+                            </div>
+                            <div class="col-11">
+                                The domain request were analyzed and it was allowed.
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <p class="card-text">Privacy Shield permits to disable the extension in some web sites
+                and offers an <a href="options.html">option page</a> for managing it.</p>
+        </div>
+        <div class="card-footer">
+            <div>Icons made by <a href="https://www.flaticon.com/authors/icon-works" title="Icon Works" target="_blank">Icon
+                Works</a>
+                from <a href="https://www.flaticon.com/" title="Flaticon" target="_blank">www.flaticon.com</a> is
+                licensed by
+                <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC
+                    3.0 BY</a>
+            </div>
+        </div>
+    </div>
 </div>
 </body>
 </html>
