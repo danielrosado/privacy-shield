@@ -9,7 +9,20 @@ export default class TabsManager {
    * TabsManager constructor
    */
   constructor() {
-    this._tabDomainsMap = new Map();
+    this._tabDataMap = new Map();
+  }
+
+  /**
+   * Saves a tab with its first-party domain and its enablement status
+   * @param {number} tabId
+   * @param {object} domain
+   * @param {boolean} extensionEnabled
+   */
+  saveTabAndDomain(tabId, domain, extensionEnabled) {
+    this._tabDataMap.set(tabId, {
+      firstPartyDomain: domain,
+      extensionEnabled: extensionEnabled,
+    });
   }
 
   /**
@@ -18,16 +31,29 @@ export default class TabsManager {
    * @return {boolean}
    */
   isTabSaved(tabId) {
-    return this._tabDomainsMap.has(tabId);
+    return this._tabDataMap.has(tabId);
   }
 
   /**
-   * Saves a tab with its first-party domain
+   * Returns true if extension is enabled at this tab
    * @param {number} tabId
-   * @param {object} domain
+   * @return {boolean}
    */
-  saveTabAndDomain(tabId, domain) {
-    this._tabDomainsMap.set(tabId, {firstPartyDomain: domain});
+  isExtensionEnabledAtTab(tabId) {
+    const tab = this._tabDataMap.get(tabId);
+    if (!tab) {
+      return false;
+    }
+    return tab.extensionEnabled;
+  }
+
+  /**
+   * Sets the extension enablement at tab
+   * @param {number} tabId
+   * @param {boolean} enabled
+   */
+  setExtensionEnablementAtTab(tabId, enabled) {
+    this._tabDataMap.get(tabId).extensionEnabled = enabled;
   }
 
   /**
@@ -37,7 +63,7 @@ export default class TabsManager {
    * @return {boolean}
    */
   isThirdPartyDomain(tabId, requestDomain) {
-    const tabDomain = this._tabDomainsMap.get(tabId).firstPartyDomain;
+    const tabDomain = this._tabDataMap.get(tabId).firstPartyDomain;
     return tabDomain.domain !== requestDomain.domain
       || tabDomain.tld !== requestDomain.tld;
   }
@@ -48,7 +74,7 @@ export default class TabsManager {
    * @param {Object} domain
    */
   addThirdPartyDomainToTab(tabId, domain) {
-    const tabDomains = this._tabDomainsMap.get(tabId);
+    const tabDomains = this._tabDataMap.get(tabId);
     if (!tabDomains.hasOwnProperty('thirdPartyDomains')) {
       tabDomains.thirdPartyDomains = [];
     }
@@ -65,7 +91,7 @@ export default class TabsManager {
    * @return {string|undefined}
    */
   getFirstPartyDomainByTab(tabId) {
-    const tab = this._tabDomainsMap.get(tabId);
+    const tab = this._tabDataMap.get(tabId);
     if (tab) {
       const d = tab.firstPartyDomain;
       return `${d.subdomain}.${d.domain}.${d.tld}`.replace(/^\.|\.$/g, '');
@@ -78,7 +104,7 @@ export default class TabsManager {
    * @return {array}
    */
   getThirdPartyDomainsByTab(tabId) {
-    const tab = this._tabDomainsMap.get(tabId);
+    const tab = this._tabDataMap.get(tabId);
     if (!tab || !tab.hasOwnProperty('thirdPartyDomains')) {
       return [];
     }
@@ -96,7 +122,7 @@ export default class TabsManager {
    * @return {string|undefined}
    */
   getThirdPartyDomainState(tabId, domain) {
-    const tab = this._tabDomainsMap.get(tabId);
+    const tab = this._tabDataMap.get(tabId);
     if (!tab || !tab.hasOwnProperty('thirdPartyDomains')) {
       return;
     }
@@ -117,7 +143,7 @@ export default class TabsManager {
    * @param {number} tabId
    */
   removeTab(tabId) {
-    this._tabDomainsMap.delete(tabId);
+    this._tabDataMap.delete(tabId);
   }
 
   /**
@@ -125,8 +151,8 @@ export default class TabsManager {
    * @param {number} tabId
    */
   clearThirdPartyDomainsByTab(tabId) {
-    if (this._tabDomainsMap.has(tabId)) {
-      this._tabDomainsMap.get(tabId).thirdPartyDomains = [];
+    if (this._tabDataMap.has(tabId)) {
+      this._tabDataMap.get(tabId).thirdPartyDomains = [];
     }
   }
 
@@ -134,7 +160,7 @@ export default class TabsManager {
    * Removes all added tabs
    */
   clear() {
-    this._tabDomainsMap.clear();
+    this._tabDataMap.clear();
   }
 
   /**

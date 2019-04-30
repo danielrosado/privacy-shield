@@ -18,17 +18,20 @@
             <h3>Privacy Shield</h3>
         </div>
         <div class="col-2">
-            <button class="btn" id="btn-info" data-toggle="tooltip" data-placement="top" title="Open information">
+            <button class="btn" id="btnInfo" data-toggle="tooltip" data-placement="top" title="Open information tab">
                 <i class="fa fa-info-circle"></i>
             </button>
         </div>
     </div>
     <div class="card">
         <div class="card-body">
-            <p class="card-text" style="display: none">
-                Privacy Shield blocked <span id="num-trackers"></span> tracker(s) at <span id="fp-domain">current web site</span>
+            <p class="card-text" id="extensionDisabledCardText" style="display:none">
+                Privacy Shield is disabled at <span class="domainName">current web site</span>
             </p>
-            <div class="table-responsive" id="table-domains" style="display: none">
+            <p class="card-text" id="extensionEnabledCardText" style="display:none">
+                Privacy Shield blocked <span id="numTrackers"></span> tracker(s) at <br><span class="domainName">current web site</span>
+            </p>
+            <div class="table-responsive" id="tableDomains" style="display:none">
                 <table class="table border">
                     <thead class="thead-light">
                     <tr>
@@ -38,6 +41,14 @@
                     </thead>
                     <tbody></tbody>
                 </table>
+            </div>
+        </div>
+        <div class="card-header">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input" id="enablementSwitch" checked>
+                <label class="custom-control-label" for="enablementSwitch">Privacy Shield is
+                    <span id="enablementState">enabled</span> for this site
+                </label>
             </div>
         </div>
     </div>
