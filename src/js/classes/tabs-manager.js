@@ -13,7 +13,7 @@ export default class TabsManager {
   }
 
   /**
-   * Saves a tab with its first-party domain
+   * Saves a tab with its first-party domain and its enablement status
    * @param {number} tabId
    * @param {object} domain
    * @param {boolean} extensionEnabled
@@ -35,14 +35,14 @@ export default class TabsManager {
   }
 
   /**
-   * Returns true if extension is disabled at this tab
+   * Returns true if extension is enabled at this tab
    * @param {number} tabId
    * @return {boolean}
    */
   isExtensionEnabledAtTab(tabId) {
     const tab = this._tabDataMap.get(tabId);
     if (!tab) {
-      return true;
+      return false;
     }
     return tab.extensionEnabled;
   }

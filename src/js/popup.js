@@ -2,7 +2,7 @@
 
 'use strict';
 
-import {DomainState, MessageType} from './utils/constants';
+import {DomainStateType, MessageType} from './utils/constants';
 
 // **********************
 // Functions declarations
@@ -30,64 +30,62 @@ function createOrActiveTab(url) {
 }
 
 /**
- * Shows the information and the table of third-party domains
- * when the extension is enabled for that domain
- * @param {Object} response
+ * Prints the popup with the information and the table of third-party domains
+ * found at that tab when the extension is enabled or disabled for that domain
+ * @param {Object} tabData
  */
-function showExtensionEnabledCard(response) {
+function printPopup(tabData) {
   const $cardBody = $('.card-body');
-  let blockedCount = 0;
-  // Builds third-party domains table
-  for (const domain of response.thirdPartyDomains) {
-    const $row = $('<tr>');
-    const $dataDomain = $('<td>');
-    $dataDomain.text(domain.name);
-    $row.append($dataDomain);
-    const $dataState = $('<td>');
-    const $badge = $('<span>', {class: 'badge'});
-    switch (domain.state) {
-      case DomainState.BLOCKED:
-        $badge.addClass('badge-danger');
-        $badge.append('<i class="fa fa-ban"></i> Blocked');
-        blockedCount++;
-        break;
-      case DomainState.COOKIE_BLOCKED:
-        $badge.addClass('badge-warning');
-        $badge.append('<i class="fa fa-warning"></i> Cookies');
-        break;
-      default:
-        $badge.addClass('badge-success');
-        $badge.append('<i class="fa fa-check"></i> Allowed');
+  if (tabData.extensionEnabled) {
+    let blockedCount = 0;
+    // Builds third-party domains table
+    for (const domain of tabData.thirdPartyDomains) {
+      const $row = $('<tr>');
+      const $dataDomain = $('<td>');
+      $dataDomain.text(domain.name);
+      $row.append($dataDomain);
+      const $dataState = $('<td>');
+      const $badge = $('<span>', {class: 'badge'});
+      switch (domain.state) {
+        case DomainStateType.BLOCKED:
+          $badge.addClass('badge-danger');
+          $badge.append('<i class="fa fa-ban"></i> Blocked');
+          blockedCount++;
+          break;
+        case DomainStateType.COOKIE_BLOCKED:
+          $badge.addClass('badge-warning');
+          $badge.append('<i class="fa fa-warning"></i> Cookies');
+          break;
+        default:
+          $badge.addClass('badge-success');
+          $badge.append('<i class="fa fa-check"></i> Allowed');
+      }
+      $dataState.append($badge);
+      $row.append($dataState);
+      $cardBody.find('tbody').append($row);
     }
-    $dataState.append($badge);
-    $row.append($dataState);
-    $cardBody.find('tbody').append($row);
-  }
-  // Add info and show it
-  const $text = $cardBody.find('#extensionEnabledCardText');
-  if (response.firstPartyDomain) {
-    $text.find('.domainName').html(`<b>${response.firstPartyDomain}</b>`);
-  }
-  $text.find('#numTrackers').html(`<b>${blockedCount}</b>`);
-  $text.show();
-  if (response.thirdPartyDomains.length) {
-    $cardBody.find('#tableDomains').show();
+    // Add info and show it
+    const $text = $cardBody.find('#extensionEnabledCardText');
+    $text.find('.domainName').html(`<b>${tabData.firstPartyDomain}</b>`);
+    $text.find('#numTrackers').html(`<b>${blockedCount}</b>`);
+    $text.show();
+    if (tabData.thirdPartyDomains.length) {
+      $cardBody.find('#tableDomains').show();
+    }
+  } else { // disabled
+    const $text = $cardBody.find('#extensionDisabledCardText');
+    const $cardHeader = $('.card-header');
+    if (tabData.firstPartyDomain) {
+      $text.find('.domainName').html(`<b>${tabData.firstPartyDomain}</b>`);
+    } else {
+      $cardHeader.find('#enablementSwitch').prop('disabled', true);
+    }
+    $cardHeader.find('#enablementSwitch').prop('checked', false);
+    $cardHeader.find('#enablementState').text('disabled');
+    $text.show();
   }
 }
 
-/**
- * Shows the information when the extension is disabled at that domain
- * @param {object} response
- */
-function showExtensionDisabledCard(response) {
-  const $cardBody = $('.card-body');
-  const $text = $cardBody.find('#extensionDisabledCardText');
-  $text.find('.domainName').html(`<b>${response.firstPartyDomain}</b>`);
-  const $cardHeader = $('.card-header');
-  $cardHeader.find('#enablementSwitch').prop('checked', false);
-  $cardHeader.find('#enablementState').text('disabled');
-  $text.show();
-}
 
 /**
  * Sends a message from popup
@@ -126,7 +124,7 @@ function initDOMEventListeners() {
   $('#enablementSwitch').change(function() {
     const enabled = this.checked;
     sendMessageFromPopup({
-      'type': MessageType.EXTENSION_ENABLEMENT,
+      'type': MessageType.UPDATE_EXTENSION_ENABLEMENT,
       'enabled': enabled,
     });
   });
@@ -140,11 +138,7 @@ $(function() {
   initChromeEventListeners();
   initDOMEventListeners();
   $('[data-toggle="tooltip"]').tooltip();
-  sendMessageFromPopup({'type': MessageType.GET_TAB_DOMAINS}, (response) => {
-    if (response.extensionEnabled) {
-      showExtensionEnabledCard(response);
-    } else {
-      showExtensionDisabledCard(response);
-    }
+  sendMessageFromPopup({'type': MessageType.GET_TAB_DATA}, (response) => {
+    printPopup(response);
   });
 });

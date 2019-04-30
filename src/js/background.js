@@ -2,7 +2,7 @@
 
 import parseDomain from 'parse-domain';
 import TabsManager from './classes/tabs-manager';
-import {MessageType, DomainState, EXTENSION_DISABLED_DOMAINS_KEY}
+import {MessageType, DomainStateType, EXTENSION_DISABLED_DOMAINS_KEY}
   from './utils/constants';
 
 // ****************************
@@ -30,7 +30,7 @@ function isExtensionEnabledAtDomain(domain) {
 }
 
 /**
- * Enables or disables the domain of the given tab
+ * Enables or disables the extension given tab
  * @param {number} tabId
  * @param {boolean} enabled
  */
@@ -71,8 +71,7 @@ function onBeforeRequestCallback(details) {
     tm.saveTabAndDomain(details.tabId, domain, enabled);
     return {};
   }
-  if (!tm.isTabSaved(details.tabId)
-    || !tm.isExtensionEnabledAtTab(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabledAtTab(details.tabId)) {
     return {};
   }
   const requestDomain = parseDomain(details.url);
@@ -83,12 +82,12 @@ function onBeforeRequestCallback(details) {
   const blockingResponse = {};
   const d = `${requestDomain.domain}.${requestDomain.tld}`;
   if (trackers.has(d) ) {
-    requestDomain.state = DomainState.BLOCKED;
+    requestDomain.state = DomainStateType.BLOCKED;
     blockingResponse.cancel = true;
   } else if (yellowList.has(d)) {
-    requestDomain.state = DomainState.COOKIE_BLOCKED;
+    requestDomain.state = DomainStateType.COOKIE_BLOCKED;
   } else {
-    requestDomain.state = DomainState.ALLOWED;
+    requestDomain.state = DomainStateType.ALLOWED;
   }
   tm.addThirdPartyDomainToTab(details.tabId, requestDomain);
   return blockingResponse;
@@ -100,13 +99,12 @@ function onBeforeRequestCallback(details) {
  * @return {BlockingResponse} blockingResponse
  */
 function onBeforeSendHeadersCallback(details) {
-  if (!tm.isTabSaved(details.tabId)
-    || !tm.isExtensionEnabledAtTab(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabledAtTab(details.tabId)) {
     return {};
   }
   const requestDomain = parseDomain(details.url);
   const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
-  if (state === DomainState.COOKIE_BLOCKED) {
+  if (state === DomainStateType.COOKIE_BLOCKED) {
     const requestHeaders = details.requestHeaders.filter((header) => {
       const headerName = header.name.toLowerCase();
       return headerName !== 'cookie' && headerName !== 'referer';
@@ -122,13 +120,12 @@ function onBeforeSendHeadersCallback(details) {
  * @return {BlockingResponse} blockingResponse
  */
 function onHeadersReceivedCallback(details) {
-  if (!tm.isTabSaved(details.tabId)
-    || !tm.isExtensionEnabledAtTab(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabledAtTab(details.tabId)) {
     return {};
   }
   const requestDomain = parseDomain(details.url);
   const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
-  if (state === DomainState.COOKIE_BLOCKED) {
+  if (state === DomainStateType.COOKIE_BLOCKED) {
     const responseHeaders = details.responseHeaders.filter((header) =>
       header.name.toLowerCase() !== 'set-cookie'
     );
@@ -141,8 +138,10 @@ function onHeadersReceivedCallback(details) {
  * Initializes Chrome API events listeners
  */
 function initChromeEventListeners() {
-  chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.local.set({[EXTENSION_DISABLED_DOMAINS_KEY]: []});
+  chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason === 'install') {
+      chrome.storage.local.set({[EXTENSION_DISABLED_DOMAINS_KEY]: []});
+    }
   });
 
   chrome.tabs.onRemoved.addListener((tabId) => {
@@ -170,12 +169,12 @@ function initChromeEventListeners() {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const response = {};
     switch (message.type) {
-      case MessageType.GET_TAB_DOMAINS:
+      case MessageType.GET_TAB_DATA:
         response.firstPartyDomain = tm.getFirstPartyDomainByTab(message.tabId);
         response.thirdPartyDomains = tm.getThirdPartyDomainsByTab(message.tabId);
         response.extensionEnabled = tm.isExtensionEnabledAtTab(message.tabId);
         break;
-      case MessageType.EXTENSION_ENABLEMENT:
+      case MessageType.UPDATE_EXTENSION_ENABLEMENT:
         updateExtensionEnablement(message.tabId, message.enabled);
     }
     sendResponse(response);
