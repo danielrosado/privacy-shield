@@ -2,8 +2,11 @@
 
 import parseDomain from 'parse-domain';
 import TabsManager from './classes/tabs-manager';
-import {MessageType, DomainStateType, EXTENSION_DISABLED_DOMAINS_KEY}
-  from './utils/constants';
+import {
+  DomainStateType,
+  EXTENSION_DISABLED_DOMAINS_KEY,
+  MessageType,
+} from './utils/constants';
 
 // ****************************
 // Global variables declaration
@@ -19,23 +22,32 @@ let yellowList;
 // **********************
 
 /**
+ * Returns the string representation of a domain
+ * @param {object} domain
+ * @return {string}
+ */
+function domainToString(domain) {
+  if (domain) {
+    return `${domain.subdomain}.${domain.domain}.${domain.tld}`
+        .replace(/^\.|\.$/g, '');
+  }
+}
+
+/**
  * Return if extension is enabled at given domain or not
  * @param {object} domain
  * @return {boolean}
  */
 function isExtensionEnabledAtDomain(domain) {
-  const domainStr = `${domain.subdomain}.${domain.domain}.${domain.tld}`
-      .replace(/^\.|\.$/g, '');
-  return !extensionDisabledDomains.has(domainStr);
+  return !extensionDisabledDomains.has(domainToString(domain));
 }
 
 /**
  * Enables or disables the extension given tab
- * @param {number} tabId
+ * @param {string} domain
  * @param {boolean} enabled
  */
-function updateExtensionEnablement(tabId, enabled) {
-  const domain = tm.getFirstPartyDomainByTab(tabId);
+function updateExtensionEnablement(domain, enabled) {
   if (!domain) {
     return;
   }
@@ -44,13 +56,19 @@ function updateExtensionEnablement(tabId, enabled) {
   } else {
     extensionDisabledDomains.add(domain);
   }
-  tm.setExtensionEnablementAtTab(tabId, enabled);
   const items = {
     [EXTENSION_DISABLED_DOMAINS_KEY]: Array.from(extensionDisabledDomains),
   };
   chrome.storage.local.set(items, () => {
-    chrome.tabs.reload(() => {
-      chrome.runtime.sendMessage({'type': MessageType.CLOSE_POPUP});
+    chrome.tabs.query({}, (tabs) => {
+      for (const tab of tabs) {
+        const d = parseDomain(tab.url);
+        if (domainToString(d) === domain) {
+          chrome.tabs.reload(tab.id, () => {
+            chrome.runtime.sendMessage({type: MessageType.CLOSE_POPUP});
+          });
+        }
+      }
     });
   });
 }
@@ -175,7 +193,13 @@ function initChromeEventListeners() {
         response.extensionEnabled = tm.isExtensionEnabledAtTab(message.tabId);
         break;
       case MessageType.UPDATE_EXTENSION_ENABLEMENT:
-        updateExtensionEnablement(message.tabId, message.enabled);
+        let domain;
+        if (message.hasOwnProperty('domain')) {
+          domain = message.domain;
+        } else {
+          domain = tm.getFirstPartyDomainByTab(message.tabId);
+        }
+        updateExtensionEnablement(domain, message.enabled);
     }
     sendResponse(response);
   });

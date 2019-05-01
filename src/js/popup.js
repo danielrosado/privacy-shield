@@ -30,6 +30,23 @@ function createOrActiveTab(url) {
 }
 
 /**
+ * Sends a message from popup
+ * @param {object} message
+ * @param {function} responseCallback
+ */
+function sendMessageFromPopup(message, responseCallback=undefined) {
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    message.tabId = tabs[0].id;
+    if (responseCallback !== undefined) {
+      chrome.runtime.sendMessage(message, responseCallback);
+    } else {
+      chrome.runtime.sendMessage(message);
+    }
+  });
+}
+
+
+/**
  * Prints the popup with the information and the table of third-party domains
  * found at that tab when the extension is enabled or disabled for that domain
  * @param {Object} tabData
@@ -64,14 +81,14 @@ function printPopup(tabData) {
       $row.append($dataState);
       $cardBody.find('tbody').append($row);
     }
+    if (tabData.thirdPartyDomains.length) {
+      $cardBody.find('#tableDomains').show();
+    }
     // Add info and show it
     const $text = $cardBody.find('#extensionEnabledCardText');
     $text.find('.domainName').html(`<b>${tabData.firstPartyDomain}</b>`);
     $text.find('#numTrackers').html(`<b>${blockedCount}</b>`);
     $text.show();
-    if (tabData.thirdPartyDomains.length) {
-      $cardBody.find('#tableDomains').show();
-    }
   } else { // disabled
     const $text = $cardBody.find('#extensionDisabledCardText');
     const $cardHeader = $('.card-header');
@@ -86,23 +103,6 @@ function printPopup(tabData) {
   }
 }
 
-
-/**
- * Sends a message from popup
- * @param {object} message
- * @param {function} responseCallback
- */
-function sendMessageFromPopup(message, responseCallback=undefined) {
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    message.tabId = tabs[0].id;
-    if (responseCallback !== undefined) {
-      chrome.runtime.sendMessage(message, responseCallback);
-    } else {
-      chrome.runtime.sendMessage(message);
-    }
-  });
-}
-
 /**
  * Initialiazes Chrome API event listeners
  */
@@ -115,12 +115,18 @@ function initChromeEventListeners() {
 }
 
 /**
- * Initialiazes DOM event Listeners
+ * Initialiazes DOM event listeners
  */
 function initDOMEventListeners() {
+
   $('#btnInfo').click(function() {
     createOrActiveTab(chrome.runtime.getURL('information.html'));
   });
+
+  $('#btnOptions').click(function() {
+    chrome.runtime.openOptionsPage();
+  });
+
   $('#enablementSwitch').change(function() {
     const enabled = this.checked;
     sendMessageFromPopup({
