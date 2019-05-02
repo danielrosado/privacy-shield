@@ -20,6 +20,10 @@ body {
     font-size: 2rem;
 }
 
+.container > .row .btn-group > .btn {
+    padding: .375rem;
+}
+
 .card-body {
     padding: 0.75rem;
 }

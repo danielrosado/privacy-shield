@@ -23,6 +23,7 @@ const config = {
   entry: {
     background: `${SRC_DIR}/js/background.js`,
     popup: `${SRC_DIR}/js/popup.js`,
+    options: `${SRC_DIR}/js/options.js`,
     bootstrap: `${SRC_DIR}/js/vendor/bootstrap.js`,
     fontawesome: `${SRC_DIR}/js/vendor/fontawesome.js`,
   },

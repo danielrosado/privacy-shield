@@ -1,0 +1,9 @@
+#btnAddDomain {
+    display: inline;
+}
+
+#filter {
+    display: inline;
+    float: right;
+    width: 45%;
+}

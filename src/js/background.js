@@ -1,9 +1,12 @@
 'use strict';
 
-import parseDomain from 'parse-domain';
 import TabsManager from './classes/tabs-manager';
-import {MessageType, DomainStateType, EXTENSION_DISABLED_DOMAINS_KEY}
-  from './utils/constants';
+import Domain from './classes/domain';
+import {
+  MessageType,
+  DomainStateType,
+  EXTENSION_DISABLED_DOMAINS_KEY,
+} from './utils/constants';
 
 // ****************************
 // Global variables declaration
@@ -19,23 +22,11 @@ let yellowList;
 // **********************
 
 /**
- * Return if extension is enabled at given domain or not
- * @param {object} domain
- * @return {boolean}
- */
-function isExtensionEnabledAtDomain(domain) {
-  const domainStr = `${domain.subdomain}.${domain.domain}.${domain.tld}`
-      .replace(/^\.|\.$/g, '');
-  return !extensionDisabledDomains.has(domainStr);
-}
-
-/**
  * Enables or disables the extension given tab
- * @param {number} tabId
+ * @param {string} domain
  * @param {boolean} enabled
  */
-function updateExtensionEnablement(tabId, enabled) {
-  const domain = tm.getFirstPartyDomainByTab(tabId);
+function updateExtensionEnablement(domain, enabled) {
   if (!domain) {
     return;
   }
@@ -44,14 +35,12 @@ function updateExtensionEnablement(tabId, enabled) {
   } else {
     extensionDisabledDomains.add(domain);
   }
-  tm.setExtensionEnablementAtTab(tabId, enabled);
   const items = {
     [EXTENSION_DISABLED_DOMAINS_KEY]: Array.from(extensionDisabledDomains),
   };
   chrome.storage.local.set(items, () => {
-    chrome.tabs.reload(() => {
-      chrome.runtime.sendMessage({'type': MessageType.CLOSE_POPUP});
-    });
+    tm.reloadDomainTabs(domain);
+    chrome.runtime.sendMessage({type: MessageType.CLOSE_POPUP});
   });
 }
 
@@ -64,27 +53,24 @@ function onBeforeRequestCallback(details) {
   if (details.url.startsWith('chrome://') || details.tabId < 0) {
     return {};
   }
+  const requestDomain = new Domain(details.url);
   if (details.type === 'main_frame') {
-    const domain = parseDomain(details.url);
     tm.removeTab(details.tabId);
-    const enabled = isExtensionEnabledAtDomain(domain);
-    tm.saveTabAndDomain(details.tabId, domain, enabled);
+    const enabled = !extensionDisabledDomains.has(requestDomain.toString());
+    tm.saveTabAndDomain(details.tabId, requestDomain, enabled);
     return {};
   }
-  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabledAtTab(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabled(details.tabId)
+    || !tm.isThirdPartyDomain(details.tabId, requestDomain)) {
     return {};
   }
-  const requestDomain = parseDomain(details.url);
-  if (!tm.isThirdPartyDomain(details.tabId, requestDomain)) {
-    return {};
-  }
-  // Set third-party domain state and BlockingResponse object
+  // Set third-party domain state and return BlockingResponse object
   const blockingResponse = {};
-  const d = `${requestDomain.domain}.${requestDomain.tld}`;
-  if (trackers.has(d) ) {
+  const requestDomainStr = requestDomain.toString(true);
+  if (trackers.has(requestDomainStr) ) {
     requestDomain.state = DomainStateType.BLOCKED;
     blockingResponse.cancel = true;
-  } else if (yellowList.has(d)) {
+  } else if (yellowList.has(requestDomainStr)) {
     requestDomain.state = DomainStateType.COOKIE_BLOCKED;
   } else {
     requestDomain.state = DomainStateType.ALLOWED;
@@ -99,10 +85,10 @@ function onBeforeRequestCallback(details) {
  * @return {BlockingResponse} blockingResponse
  */
 function onBeforeSendHeadersCallback(details) {
-  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabledAtTab(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabled(details.tabId)) {
     return {};
   }
-  const requestDomain = parseDomain(details.url);
+  const requestDomain = new Domain(details.url);
   const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
   if (state === DomainStateType.COOKIE_BLOCKED) {
     const requestHeaders = details.requestHeaders.filter((header) => {
@@ -120,10 +106,10 @@ function onBeforeSendHeadersCallback(details) {
  * @return {BlockingResponse} blockingResponse
  */
 function onHeadersReceivedCallback(details) {
-  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabledAtTab(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabled(details.tabId)) {
     return {};
   }
-  const requestDomain = parseDomain(details.url);
+  const requestDomain = new Domain(details.url);
   const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
   if (state === DomainStateType.COOKIE_BLOCKED) {
     const responseHeaders = details.responseHeaders.filter((header) =>
@@ -172,10 +158,13 @@ function initChromeEventListeners() {
       case MessageType.GET_TAB_DATA:
         response.firstPartyDomain = tm.getFirstPartyDomainByTab(message.tabId);
         response.thirdPartyDomains = tm.getThirdPartyDomainsByTab(message.tabId);
-        response.extensionEnabled = tm.isExtensionEnabledAtTab(message.tabId);
+        response.extensionEnabled = tm.isExtensionEnabled(message.tabId);
         break;
       case MessageType.UPDATE_EXTENSION_ENABLEMENT:
-        updateExtensionEnablement(message.tabId, message.enabled);
+        if (!message.hasOwnProperty('domain')) {
+          message.domain = tm.getFirstPartyDomainByTab(message.tabId);
+        }
+        updateExtensionEnablement(message.domain, message.enabled);
     }
     sendResponse(response);
   });
