@@ -4,12 +4,16 @@
 
 import {EXTENSION_DISABLED_DOMAINS_KEY, MessageType} from './utils/constants';
 
+// **********************
+// Functions declarations
+// **********************
+
 /**
  * Creates a new row with the given domain
  * @param {string} domain
  * @return {object} $row
  */
-function createRow(domain) {
+function createTableRow(domain) {
   const $row = $('<tr>');
   const $dataDomain = $('<td>');
   $dataDomain.text(domain);
@@ -26,9 +30,9 @@ function createRow(domain) {
 }
 
 /**
- * Loads de domains which extension is disabled
+ * Prints the disabled extension domains table
  */
-function loadDisabledExtensionDomains() {
+function printDisabledExtensionDomainsTable() {
   chrome.storage.local.get(EXTENSION_DISABLED_DOMAINS_KEY, function(items) {
     const domains = items[EXTENSION_DISABLED_DOMAINS_KEY];
     if (!domains || !domains.length) {
@@ -37,7 +41,7 @@ function loadDisabledExtensionDomains() {
     }
     const $table = $('.table');
     for (const domain of domains) {
-      const $row = createRow(domain);
+      const $row = createTableRow(domain);
       $table.find('tbody').append($row);
     }
     $table.closest('.row').show();
@@ -48,7 +52,7 @@ function loadDisabledExtensionDomains() {
  * Initializes DOM event listeners
  */
 function initDOMEventListeners() {
-
+  /* eslint-disable no-invalid-this */
   $('#btnAddDomain').click(function() {
     const $domain = $('#domain');
     $domain.closest('.row').show('slow');
@@ -64,7 +68,7 @@ function initDOMEventListeners() {
 
   $('#add').click(function() {
     const domain = $('#domain').val();
-    const $row = createRow(domain);
+    const $row = createTableRow(domain);
     const $table = $('.table');
     chrome.runtime.sendMessage({
       'type': MessageType.UPDATE_EXTENSION_ENABLEMENT,
@@ -97,9 +101,14 @@ function initDOMEventListeners() {
       }
     });
   });
+  /* eslint-enable no-invalid-this */
 }
+
+// ************************
+// Starts options script
+// ************************
 
 $(function() {
   initDOMEventListeners();
-  loadDisabledExtensionDomains();
+  printDisabledExtensionDomainsTable();
 });

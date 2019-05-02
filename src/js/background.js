@@ -1,11 +1,11 @@
 'use strict';
 
-import parseDomain from 'parse-domain';
 import TabsManager from './classes/tabs-manager';
+import Domain from './classes/domain';
 import {
+  MessageType,
   DomainStateType,
   EXTENSION_DISABLED_DOMAINS_KEY,
-  MessageType,
 } from './utils/constants';
 
 // ****************************
@@ -20,27 +20,6 @@ let yellowList;
 // **********************
 // Functions declarations
 // **********************
-
-/**
- * Returns the string representation of a domain
- * @param {object} domain
- * @return {string}
- */
-function domainToString(domain) {
-  if (domain) {
-    return `${domain.subdomain}.${domain.domain}.${domain.tld}`
-        .replace(/^\.|\.$/g, '');
-  }
-}
-
-/**
- * Return if extension is enabled at given domain or not
- * @param {object} domain
- * @return {boolean}
- */
-function isExtensionEnabledAtDomain(domain) {
-  return !extensionDisabledDomains.has(domainToString(domain));
-}
 
 /**
  * Enables or disables the extension given tab
@@ -60,16 +39,8 @@ function updateExtensionEnablement(domain, enabled) {
     [EXTENSION_DISABLED_DOMAINS_KEY]: Array.from(extensionDisabledDomains),
   };
   chrome.storage.local.set(items, () => {
-    chrome.tabs.query({}, (tabs) => {
-      for (const tab of tabs) {
-        const d = parseDomain(tab.url);
-        if (domainToString(d) === domain) {
-          chrome.tabs.reload(tab.id, () => {
-            chrome.runtime.sendMessage({type: MessageType.CLOSE_POPUP});
-          });
-        }
-      }
-    });
+    tm.reloadDomainTabs(domain);
+    chrome.runtime.sendMessage({type: MessageType.CLOSE_POPUP});
   });
 }
 
@@ -82,27 +53,24 @@ function onBeforeRequestCallback(details) {
   if (details.url.startsWith('chrome://') || details.tabId < 0) {
     return {};
   }
+  const requestDomain = new Domain(details.url);
   if (details.type === 'main_frame') {
-    const domain = parseDomain(details.url);
     tm.removeTab(details.tabId);
-    const enabled = isExtensionEnabledAtDomain(domain);
-    tm.saveTabAndDomain(details.tabId, domain, enabled);
+    const enabled = !extensionDisabledDomains.has(requestDomain.toString());
+    tm.saveTabAndDomain(details.tabId, requestDomain, enabled);
     return {};
   }
-  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabledAtTab(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabled(details.tabId)
+    || !tm.isThirdPartyDomain(details.tabId, requestDomain)) {
     return {};
   }
-  const requestDomain = parseDomain(details.url);
-  if (!tm.isThirdPartyDomain(details.tabId, requestDomain)) {
-    return {};
-  }
-  // Set third-party domain state and BlockingResponse object
+  // Set third-party domain state and return BlockingResponse object
   const blockingResponse = {};
-  const d = `${requestDomain.domain}.${requestDomain.tld}`;
-  if (trackers.has(d) ) {
+  const requestDomainStr = requestDomain.toString(true);
+  if (trackers.has(requestDomainStr) ) {
     requestDomain.state = DomainStateType.BLOCKED;
     blockingResponse.cancel = true;
-  } else if (yellowList.has(d)) {
+  } else if (yellowList.has(requestDomainStr)) {
     requestDomain.state = DomainStateType.COOKIE_BLOCKED;
   } else {
     requestDomain.state = DomainStateType.ALLOWED;
@@ -117,10 +85,10 @@ function onBeforeRequestCallback(details) {
  * @return {BlockingResponse} blockingResponse
  */
 function onBeforeSendHeadersCallback(details) {
-  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabledAtTab(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabled(details.tabId)) {
     return {};
   }
-  const requestDomain = parseDomain(details.url);
+  const requestDomain = new Domain(details.url);
   const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
   if (state === DomainStateType.COOKIE_BLOCKED) {
     const requestHeaders = details.requestHeaders.filter((header) => {
@@ -138,10 +106,10 @@ function onBeforeSendHeadersCallback(details) {
  * @return {BlockingResponse} blockingResponse
  */
 function onHeadersReceivedCallback(details) {
-  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabledAtTab(details.tabId)) {
+  if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabled(details.tabId)) {
     return {};
   }
-  const requestDomain = parseDomain(details.url);
+  const requestDomain = new Domain(details.url);
   const state = tm.getThirdPartyDomainState(details.tabId, requestDomain);
   if (state === DomainStateType.COOKIE_BLOCKED) {
     const responseHeaders = details.responseHeaders.filter((header) =>
@@ -190,16 +158,13 @@ function initChromeEventListeners() {
       case MessageType.GET_TAB_DATA:
         response.firstPartyDomain = tm.getFirstPartyDomainByTab(message.tabId);
         response.thirdPartyDomains = tm.getThirdPartyDomainsByTab(message.tabId);
-        response.extensionEnabled = tm.isExtensionEnabledAtTab(message.tabId);
+        response.extensionEnabled = tm.isExtensionEnabled(message.tabId);
         break;
       case MessageType.UPDATE_EXTENSION_ENABLEMENT:
-        let domain;
-        if (message.hasOwnProperty('domain')) {
-          domain = message.domain;
-        } else {
-          domain = tm.getFirstPartyDomainByTab(message.tabId);
+        if (!message.hasOwnProperty('domain')) {
+          message.domain = tm.getFirstPartyDomainByTab(message.tabId);
         }
-        updateExtensionEnablement(domain, message.enabled);
+        updateExtensionEnablement(message.domain, message.enabled);
     }
     sendResponse(response);
   });

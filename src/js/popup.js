@@ -45,6 +45,35 @@ function sendMessageFromPopup(message, responseCallback=undefined) {
   });
 }
 
+/**
+ * Creates a new row with the given domain
+ * @param {object} domain
+ * @return {object} $row
+ */
+function createTableRow(domain) {
+  const $row = $('<tr>');
+  const $dataDomain = $('<td>');
+  $dataDomain.text(domain.name);
+  $row.append($dataDomain);
+  const $dataState = $('<td>');
+  const $badge = $('<span>', {class: 'badge'});
+  switch (domain.state) {
+    case DomainStateType.BLOCKED:
+      $badge.addClass('badge-danger');
+      $badge.append('<i class="fa fa-ban"></i> Blocked');
+      break;
+    case DomainStateType.COOKIE_BLOCKED:
+      $badge.addClass('badge-warning');
+      $badge.append('<i class="fa fa-warning"></i> Cookies');
+      break;
+    default:
+      $badge.addClass('badge-success');
+      $badge.append('<i class="fa fa-check"></i> Allowed');
+  }
+  $dataState.append($badge);
+  $row.append($dataState);
+  return $row;
+}
 
 /**
  * Prints the popup with the information and the table of third-party domains
@@ -54,40 +83,18 @@ function sendMessageFromPopup(message, responseCallback=undefined) {
 function printPopup(tabData) {
   const $cardBody = $('.card-body');
   if (tabData.extensionEnabled) {
-    let blockedCount = 0;
     // Builds third-party domains table
-    for (const domain of tabData.thirdPartyDomains) {
-      const $row = $('<tr>');
-      const $dataDomain = $('<td>');
-      $dataDomain.text(domain.name);
-      $row.append($dataDomain);
-      const $dataState = $('<td>');
-      const $badge = $('<span>', {class: 'badge'});
-      switch (domain.state) {
-        case DomainStateType.BLOCKED:
-          $badge.addClass('badge-danger');
-          $badge.append('<i class="fa fa-ban"></i> Blocked');
-          blockedCount++;
-          break;
-        case DomainStateType.COOKIE_BLOCKED:
-          $badge.addClass('badge-warning');
-          $badge.append('<i class="fa fa-warning"></i> Cookies');
-          break;
-        default:
-          $badge.addClass('badge-success');
-          $badge.append('<i class="fa fa-check"></i> Allowed');
-      }
-      $dataState.append($badge);
-      $row.append($dataState);
-      $cardBody.find('tbody').append($row);
-    }
     if (tabData.thirdPartyDomains.length) {
+      for (const domain of tabData.thirdPartyDomains) {
+        const $row = createTableRow(domain);
+        $cardBody.find('tbody').append($row);
+      }
       $cardBody.find('#tableDomains').show();
     }
     // Add info and show it
     const $text = $cardBody.find('#extensionEnabledCardText');
     $text.find('.domainName').html(`<b>${tabData.firstPartyDomain}</b>`);
-    $text.find('#numTrackers').html(`<b>${blockedCount}</b>`);
+    $text.find('#numTrackers').html(`<b>${$('.badge-danger').length}</b>`);
     $text.show();
   } else { // disabled
     const $text = $cardBody.find('#extensionDisabledCardText');
@@ -118,7 +125,7 @@ function initChromeEventListeners() {
  * Initialiazes DOM event listeners
  */
 function initDOMEventListeners() {
-
+  /* eslint-disable no-invalid-this */
   $('#btnInfo').click(function() {
     createOrActiveTab(chrome.runtime.getURL('information.html'));
   });
@@ -134,6 +141,7 @@ function initDOMEventListeners() {
       'enabled': enabled,
     });
   });
+  /* eslint-enable no-invalid-this */
 }
 
 // ************************

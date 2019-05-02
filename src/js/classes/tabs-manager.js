@@ -15,7 +15,7 @@ export default class TabsManager {
   /**
    * Saves a tab with its first-party domain and its enablement status
    * @param {number} tabId
-   * @param {object} domain
+   * @param {Domain} domain
    * @param {boolean} extensionEnabled
    */
   saveTabAndDomain(tabId, domain, extensionEnabled) {
@@ -39,7 +39,7 @@ export default class TabsManager {
    * @param {number} tabId
    * @return {boolean}
    */
-  isExtensionEnabledAtTab(tabId) {
+  isExtensionEnabled(tabId) {
     const tab = this._tabDataMap.get(tabId);
     if (!tab) {
       return false;
@@ -48,38 +48,28 @@ export default class TabsManager {
   }
 
   /**
-   * Sets the extension enablement at tab
-   * @param {number} tabId
-   * @param {boolean} enabled
-   */
-  setExtensionEnablementAtTab(tabId, enabled) {
-    this._tabDataMap.get(tabId).extensionEnabled = enabled;
-  }
-
-  /**
    * Checks if a domain is a third-party domain
    * @param {number} tabId
-   * @param {Object} requestDomain
+   * @param {Domain} requestDomain
    * @return {boolean}
    */
   isThirdPartyDomain(tabId, requestDomain) {
     const tabDomain = this._tabDataMap.get(tabId).firstPartyDomain;
-    return tabDomain.domain !== requestDomain.domain
-      || tabDomain.tld !== requestDomain.tld;
+    return tabDomain.isThirdPartyDomain(requestDomain);
   }
 
   /**
    * Adds a third-party domain to a given tab
    * @param {number} tabId
-   * @param {Object} domain
+   * @param {Domain} domain
    */
   addThirdPartyDomainToTab(tabId, domain) {
     const tabDomains = this._tabDataMap.get(tabId);
     if (!tabDomains.hasOwnProperty('thirdPartyDomains')) {
-      tabDomains.thirdPartyDomains = [];
+      tabDomains.thirdPartyDomains = [domain];
+      return;
     }
-    const found = tabDomains.thirdPartyDomains.some((d) =>
-      TabsManager._equalsDomains(d, domain));
+    const found = tabDomains.thirdPartyDomains.some((d) => d.equals(domain));
     if (!found) {
       tabDomains.thirdPartyDomains.push(domain);
     }
@@ -93,8 +83,7 @@ export default class TabsManager {
   getFirstPartyDomainByTab(tabId) {
     const tab = this._tabDataMap.get(tabId);
     if (tab) {
-      const d = tab.firstPartyDomain;
-      return `${d.subdomain}.${d.domain}.${d.tld}`.replace(/^\.|\.$/g, '');
+      return tab.firstPartyDomain.toString();
     }
   }
 
@@ -108,9 +97,9 @@ export default class TabsManager {
     if (!tab || !tab.hasOwnProperty('thirdPartyDomains')) {
       return [];
     }
-    const domains = tab.thirdPartyDomains.map((d) => ({
-      name: `${d.subdomain}.${d.domain}.${d.tld}`,
-      state: d.state,
+    const domains = tab.thirdPartyDomains.map((domain) => ({
+      name: domain.toString(),
+      state: domain.state,
     }));
     return domains.sort((d1, d2) => d1.state - d2.state);
   }
@@ -118,7 +107,7 @@ export default class TabsManager {
   /**
    * Returns the state of a third-party domain if exists
    * @param {number} tabId
-   * @param {object} domain
+   * @param {Domain} domain
    * @return {string|undefined}
    */
   getThirdPartyDomainState(tabId, domain) {
@@ -128,7 +117,7 @@ export default class TabsManager {
     }
     let found;
     for (const d of tab.thirdPartyDomains) {
-      if (TabsManager._equalsDomains(d, domain)) {
+      if (d.equals(domain)) {
         found = d;
         break;
       }
@@ -147,31 +136,21 @@ export default class TabsManager {
   }
 
   /**
-   * Clears the domains added from a tab
-   * @param {number} tabId
-   */
-  clearThirdPartyDomainsByTab(tabId) {
-    if (this._tabDataMap.has(tabId)) {
-      this._tabDataMap.get(tabId).thirdPartyDomains = [];
-    }
-  }
-
-  /**
-   * Removes all added tabs
+   * Clear all saved tabs
    */
   clear() {
     this._tabDataMap.clear();
   }
 
   /**
-   * Returns true if two domains are equals
-   * @param {object} d1
-   * @param {object} d2
-   * @return {boolean}
+   * Reloads all tabs of the given domain
+   * @param {string} domainStr
    */
-  static _equalsDomains(d1, d2) {
-    return d1.domain === d2.domain
-      && d1.subdomain === d2.subdomain
-      && d1.tld === d2.tld;
+  reloadDomainTabs(domainStr) {
+    for (const [tabId, tabData] of this._tabDataMap) {
+      if (tabData.firstPartyDomain.toString() === domainStr) {
+        chrome.tabs.reload(tabId);
+      }
+    }
   }
 }
