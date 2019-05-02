@@ -60,19 +60,23 @@ export default class TabsManager {
 
   /**
    * Adds a third-party domain to a given tab
+   * and returns if it was added or not
    * @param {number} tabId
    * @param {Domain} domain
+   * @return {boolean}
    */
   addThirdPartyDomainToTab(tabId, domain) {
     const tabDomains = this._tabDataMap.get(tabId);
     if (!tabDomains.hasOwnProperty('thirdPartyDomains')) {
       tabDomains.thirdPartyDomains = [domain];
-      return;
+      return true;
     }
     const found = tabDomains.thirdPartyDomains.some((d) => d.equals(domain));
     if (!found) {
       tabDomains.thirdPartyDomains.push(domain);
+      return true;
     }
+    return false;
   }
 
   /**
@@ -152,5 +156,34 @@ export default class TabsManager {
         chrome.tabs.reload(tabId);
       }
     }
+  }
+
+  /**
+   * Updates the blocked domain count
+   * @param {number} tabId
+   */
+  updateBlockedDomainCount(tabId) {
+    const tab = this._tabDataMap.get(tabId);
+    if (!tab.hasOwnProperty('blockedDomainCount')) {
+      tab.blockedDomainCount = 1;
+      return;
+    }
+    tab.blockedDomainCount++;
+  }
+
+  /**
+   * Updates the badge
+   * @param {number} tabId
+   */
+  updateBadge(tabId) {
+    const count = '' + this._tabDataMap.get(tabId).blockedDomainCount;
+    setTimeout(() => {
+      chrome.browserAction.setBadgeBackgroundColor({
+        color: '#DC3545',
+        tabId: tabId,
+      }, () => {
+        chrome.browserAction.setBadgeText({text: count, tabId: tabId});
+      });
+    }, 0);
   }
 }
