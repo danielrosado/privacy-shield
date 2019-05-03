@@ -1,64 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Options</title>
-    <script src="js/vendor/bootstrap.js"></script>
-    <script src="js/vendor/fontawesome.js"></script>
-    <script src="js/options.js"></script>
-    <link rel="stylesheet" type="text/css" href="css/options.css">
+  <meta charset="UTF-8">
+  <title>Options</title>
+  <script src="js/vendor/bootstrap.js"></script>
+  <script src="js/vendor/fontawesome.js"></script>
+  <script src="js/options.js"></script>
+  <link rel="stylesheet" href="css/options.css">
 </head>
 <body>
 <div class="container">
-    <div class="card">
-        <div class="card-header">
-            <div class="row">
-                <div class="col-1">
-                    <img src="images/icons/icon48.png" alt="Privacy Shield Icon">
-                </div>
-                <div class="col-11">
-                    <h1>Options</h1>
-                </div>
-            </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="row">
+        <div class="col-1">
+          <img src="images/icons/icon48.png" alt="Privacy Shield Icon">
         </div>
-        <div class="card-body">
-            <p class="card-text">This page allows you to manage the disabled extension domains.</p>
-            <div class="row">
-                <div class="col-6" style="margin-bottom: 1rem">
-                    <button class="btn btn-sm btn-primary" type="button" id="btnAddDomain" >
-                        <i class="fa fa-plus"></i> Add domain
-                    </button>
-                    <input type="text" class="form-control" id="filter" placeholder="Search..." aria-label="Filter">
-                </div>
-            </div>
-            <div class="row" style="display: none">
-                <div class="col-6" style="margin-bottom: 1rem">
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="domain" placeholder="www.example.org" aria-label="Add domain actions" aria-describedby="button-addon">
-                        <div class="input-group-append" id="button-addon">
-                            <button type="button" class="btn btn-outline-info" id="add"><i class="fa fa-plus"></i> Add</button>
-                            <button type="button" class="btn btn-outline-danger" id="cancel"><i class="fa fa-remove"></i> Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <p class="card-text" id="emptyDomainsText" style="display: none">There are not domains currently.</p>
-            <div class="row" style="display: none">
-                <div class="col-6">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th scope="col">Domain</th>
-                                <th scope="col">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="col-11">
+          <h1>Options</h1>
         </div>
+      </div>
     </div>
+    <div class="card-body">
+      <p class="card-text">This page allows you to manage the disabled extension domains.</p>
+      <div class="row">
+        <div class="col-6" style="margin-bottom: 1rem">
+          <button class="btn btn-sm btn-primary" type="button" id="btnAddDomain">
+            <i class="fa fa-plus"></i> Add domain
+          </button>
+          <input type="text" class="form-control" id="filter" placeholder="Search..." aria-label="Filter">
+        </div>
+      </div>
+      <div class="row" style="display: none">
+        <div class="col-6" style="margin-bottom: 1rem">
+          <div class="input-group">
+            <input type="text" class="form-control" id="domain" placeholder="www.example.org"
+                   aria-label="Add domain actions" aria-describedby="button-addon">
+            <div class="input-group-append" id="button-addon">
+              <button type="button" class="btn btn-outline-info" id="add"><i class="fa fa-plus"></i> Add</button>
+              <button type="button" class="btn btn-outline-danger" id="cancel"><i class="fa fa-remove"></i> Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="card-text" id="emptyDomainsText" style="display: none">There are not domains currently.</p>
+      <div class="row" style="display: none">
+        <div class="col-6">
+          <table class="table">
+            <thead>
+            <tr>
+              <th scope="col">Domain</th>
+              <th scope="col">Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 </body>
 </html>
