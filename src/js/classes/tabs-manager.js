@@ -176,13 +176,16 @@ export default class TabsManager {
    * @param {number} tabId
    */
   updateBadge(tabId) {
-    const count = '' + this._tabDataMap.get(tabId).blockedDomainCount;
+    const count = this._tabDataMap.get(tabId).blockedDomainCount;
     setTimeout(() => {
       chrome.browserAction.setBadgeBackgroundColor({
-        color: '#DC3545',
+        color: '#dc3545',
         tabId: tabId,
       }, () => {
-        chrome.browserAction.setBadgeText({text: count, tabId: tabId});
+        chrome.browserAction.setBadgeText({
+          text: count.toString(),
+          tabId: tabId,
+        });
       });
     }, 0);
   }
