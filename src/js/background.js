@@ -75,7 +75,11 @@ function onBeforeRequestCallback(details) {
   } else {
     requestDomain.state = DomainStateType.ALLOWED;
   }
-  tm.addThirdPartyDomainToTab(details.tabId, requestDomain);
+  const added = tm.addThirdPartyDomainToTab(details.tabId, requestDomain);
+  if (added && requestDomain.state === DomainStateType.BLOCKED) {
+    tm.updateBlockedDomainCount(details.tabId);
+    tm.updateBadge(details.tabId);
+  }
   return blockingResponse;
 }
 
