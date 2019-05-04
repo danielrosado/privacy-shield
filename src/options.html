@@ -24,39 +24,45 @@
     <div class="card-body">
       <p class="card-text">This page allows you to manage the disabled extension domains.</p>
       <div class="row">
-        <div class="col-6" style="margin-bottom: 1rem">
+        <div class="col-md-3">
           <button class="btn btn-sm btn-primary" type="button" id="btnAddDomain">
             <i class="fa fa-plus"></i> Add domain
           </button>
-          <input type="text" class="form-control" id="filter" placeholder="Search..." aria-label="Filter">
+        </div>
+        <div class="col-md-5">
+          <label id="filterLabel" for="filter"><i class="fa fa-filter"></i> Filter domains</label>
+          <input type="text" class="form-control" id="filter" placeholder="www.example.org" aria-label="Filter">
         </div>
       </div>
       <div class="row" style="display: none">
-        <div class="col-6" style="margin-bottom: 1rem">
+        <div class="col-md-8">
           <div class="input-group">
             <input type="text" class="form-control" id="domain" placeholder="www.example.org"
-                   aria-label="Add domain actions" aria-describedby="button-addon">
+                   aria-label="Add domain actions" aria-describedby="button-addon" required>
             <div class="input-group-append" id="button-addon">
-              <button type="button" class="btn btn-outline-info" id="add"><i class="fa fa-plus"></i> Add</button>
+              <button type="button" class="btn btn-outline-primary" id="add"><i class="fa fa-plus"></i> Add</button>
               <button type="button" class="btn btn-outline-danger" id="cancel"><i class="fa fa-remove"></i> Cancel
               </button>
             </div>
+            <div class="invalid-feedback" style="display: none"></div>
           </div>
         </div>
       </div>
       <p class="card-text" id="emptyDomainsText" style="display: none">There are not domains currently.</p>
       <div class="row" style="display: none">
-        <div class="col-6">
-          <table class="table">
-            <thead>
-            <tr>
-              <th scope="col">Domain</th>
-              <th scope="col">Action</th>
-            </tr>
-            </thead>
-            <tbody>
-            </tbody>
-          </table>
+        <div class="col-md-8">
+          <div class="table-responsive">
+            <table class="table border">
+              <thead class="thead-light">
+              <tr>
+                <th scope="col">Domain</th>
+                <th scope="col">Action</th>
+              </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

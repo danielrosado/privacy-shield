@@ -1,9 +1,33 @@
+/* https://stackoverflow.com/questions/33911049/btn-xs-no-longer-a-valid-option-in-bootstrap-4 */
+
+.btn-xs {
+    padding: .25rem .4rem;
+    font-size: .875rem;
+    line-height: .5;
+    border-radius: .2rem;
+}
+
+.card-body .row {
+    margin-bottom: 1rem;
+}
+
 #btnAddDomain {
+    margin-top: .25rem;
     display: inline;
+}
+
+#filterLabel {
+    margin-top: .5rem;
+    vertical-align: sub;
+    width: 30%;
 }
 
 #filter {
     display: inline;
     float: right;
-    width: 45%;
+    width: 70%;
+}
+
+td, tr {
+    vertical-align: middle !important;
 }
