@@ -22,35 +22,12 @@ let yellowList;
 // **********************
 
 /**
- * Enables or disables the extension given tab
- * @param {string} domain
- * @param {boolean} enabled
- */
-function updateExtensionEnablement(domain, enabled) {
-  if (!domain) {
-    return;
-  }
-  if (enabled) {
-    extensionDisabledDomains.delete(domain);
-  } else {
-    extensionDisabledDomains.add(domain);
-  }
-  const items = {
-    [EXTENSION_DISABLED_DOMAINS_KEY]: Array.from(extensionDisabledDomains),
-  };
-  chrome.storage.local.set(items, () => {
-    tm.reloadDomainTabs(domain);
-    chrome.runtime.sendMessage({type: MessageType.CLOSE_POPUP});
-  });
-}
-
-/**
  * Handles the onBeforeRequest synchronous event
  * @param {WebRequestDetails} details
  * @return {BlockingResponse} blockingResponse
  */
 function onBeforeRequestCallback(details) {
-  if (details.url.startsWith('chrome://') || details.tabId < 0) {
+  if (details.url.startsWith('chrome://') || details.tabId === -1) {
     return {};
   }
   const requestDomain = new Domain(details.url);
@@ -125,6 +102,59 @@ function onHeadersReceivedCallback(details) {
 }
 
 /**
+ * Enables or disables the extension on a web site
+ * @param {object} message
+ */
+function updateExtensionEnablement(message) {
+  if (!message.hasOwnProperty('domain')) { // from popup switch
+    if (tm.isTabSaved(message.tabId)) {
+      message.domain = tm.getFirstPartyDomainByTab(message.tabId);
+    } else {
+      message.domain = new Domain(message.tabURL).toString();
+    }
+  }
+  if (message.enabled && message.domain) {
+    extensionDisabledDomains.delete(message.domain);
+  } else {
+    extensionDisabledDomains.add(message.domain);
+  }
+  const items = {
+    [EXTENSION_DISABLED_DOMAINS_KEY]: Array.from(extensionDisabledDomains),
+  };
+  chrome.storage.local.set(items, () => {
+    if (tm.isTabSaved(message.tabId)) {
+      tm.reloadDomainTabs(message.domain);
+    } else {
+      chrome.tabs.reload(message.tabId);
+    }
+    chrome.runtime.sendMessage({type: MessageType.CLOSE_POPUP});
+  });
+}
+
+/**
+ * Gets the information of the tab
+ * @param {object} message
+ * @return {object} response
+ */
+function getTabData(message) {
+  const response = {};
+  if (tm.isTabSaved(message.tabId)) {
+    response.firstPartyDomain = tm.getFirstPartyDomainByTab(message.tabId);
+    response.extensionEnabled = tm.isExtensionEnabled(message.tabId);
+  } else {
+    if (message.tabURL.startsWith('chrome://')) {
+      response.extensionEnabled = false;
+    } else {
+      response.firstPartyDomain = new Domain(message.tabURL).toString();
+      response.extensionEnabled = !extensionDisabledDomains
+          .has(response.firstPartyDomain);
+    }
+  }
+  response.thirdPartyDomains = tm.getThirdPartyDomainsByTab(message.tabId);
+  return response;
+}
+
+/**
  * Initializes Chrome API events listeners
  */
 function initChromeEventListeners() {
@@ -157,20 +187,13 @@ function initChromeEventListeners() {
   );
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    const response = {};
     switch (message.type) {
       case MessageType.GET_TAB_DATA:
-        response.firstPartyDomain = tm.getFirstPartyDomainByTab(message.tabId);
-        response.thirdPartyDomains = tm.getThirdPartyDomainsByTab(message.tabId);
-        response.extensionEnabled = tm.isExtensionEnabled(message.tabId);
+        sendResponse(getTabData(message));
         break;
       case MessageType.UPDATE_EXTENSION_ENABLEMENT:
-        if (!message.hasOwnProperty('domain')) {
-          message.domain = tm.getFirstPartyDomainByTab(message.tabId);
-        }
-        updateExtensionEnablement(message.domain, message.enabled);
+        updateExtensionEnablement(message);
     }
-    sendResponse(response);
   });
 }
 

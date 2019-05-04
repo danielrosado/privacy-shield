@@ -53,14 +53,18 @@ export default class Domain {
 
   /**
    * Returns the string representation of a domain
-   * @param {boolean} trimSubdomain
-   * @return {string}
+   * @param {boolean} [trimSubdomain]
+   * @return {undefined|string}
    */
   toString(trimSubdomain=false) {
-    if (trimSubdomain) {
-      return `${this._domain.domain}.${this._domain.tld}`;
+    if (!this._domain) {
+      return;
     }
-    return `${this._domain.subdomain}.${this._domain.domain}.${this._domain.tld}`
-        .replace(/^\.|\.$/g, '');
+    let domainStr = '';
+    if (!trimSubdomain) {
+      domainStr += `${this._domain.subdomain}.`;
+    }
+    domainStr += `${this._domain.domain}.${this._domain.tld}`;
+    return domainStr.replace(/^\.|\.$/g, '');
   }
 }

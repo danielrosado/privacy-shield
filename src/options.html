@@ -22,9 +22,13 @@
       </div>
     </div>
     <div class="card-body">
-      <p class="card-text">This page allows you to manage the disabled extension domains.</p>
       <div class="row">
-        <div class="col-md-3">
+        <div class="col-md-10 offset-md-1">
+          <p class="card-text">This panel allows you to manage the disabled extension domains.</p>
+        </div>
+      </div>
+      <div class="row justify-content-md-center">
+        <div class="col-md-5">
           <button class="btn btn-sm btn-primary" type="button" id="btnAddDomain">
             <i class="fa fa-plus"></i> Add domain
           </button>
@@ -35,7 +39,7 @@
         </div>
       </div>
       <div class="row" style="display: none">
-        <div class="col-md-8">
+        <div class="col-md-5 offset-md-1" style="padding-right: 0">
           <div class="input-group">
             <input type="text" class="form-control" id="domain" placeholder="www.example.org"
                    aria-label="Add domain actions" aria-describedby="button-addon" required>
@@ -49,8 +53,8 @@
         </div>
       </div>
       <p class="card-text" id="emptyDomainsText" style="display: none">There are not domains currently.</p>
-      <div class="row" style="display: none">
-        <div class="col-md-8">
+      <div class="row justify-content-md-center" style="display: none">
+        <div class="col-md-10">
           <div class="table-responsive">
             <table class="table border">
               <thead class="thead-light">

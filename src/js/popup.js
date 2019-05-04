@@ -37,6 +37,7 @@ function createOrActiveTab(url) {
 function sendMessageFromPopup(message, responseCallback=undefined) {
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     message.tabId = tabs[0].id;
+    message.tabURL = tabs[0].url;
     if (responseCallback !== undefined) {
       chrome.runtime.sendMessage(message, responseCallback);
     } else {
