@@ -102,36 +102,6 @@ function onHeadersReceivedCallback(details) {
 }
 
 /**
- * Enables or disables the extension on a web site
- * @param {object} message
- */
-function updateExtensionEnablement(message) {
-  if (!message.hasOwnProperty('domain')) { // from popup switch
-    if (tm.isTabSaved(message.tabId)) {
-      message.domain = tm.getFirstPartyDomainByTab(message.tabId);
-    } else {
-      message.domain = new Domain(message.tabURL).toString();
-    }
-  }
-  if (message.enabled && message.domain) {
-    extensionDisabledDomains.delete(message.domain);
-  } else {
-    extensionDisabledDomains.add(message.domain);
-  }
-  const items = {
-    [EXTENSION_DISABLED_DOMAINS_KEY]: Array.from(extensionDisabledDomains),
-  };
-  chrome.storage.local.set(items, () => {
-    if (tm.isTabSaved(message.tabId)) {
-      tm.reloadDomainTabs(message.domain);
-    } else {
-      chrome.tabs.reload(message.tabId);
-    }
-    chrome.runtime.sendMessage({type: MessageType.CLOSE_POPUP});
-  });
-}
-
-/**
  * Gets the information of the tab
  * @param {object} message
  * @return {object} response
@@ -152,6 +122,43 @@ function getTabData(message) {
   }
   response.thirdPartyDomains = tm.getThirdPartyDomainsByTab(message.tabId);
   return response;
+}
+
+/**
+ * Enables or disables the extension on a web site
+ * @param {object} message
+ */
+function updateExtensionEnablement(message) {
+  let fromPopup;
+  if ((fromPopup = !message.hasOwnProperty('domain'))) { // from popup switch
+    if (tm.isTabSaved(message.tabId)) {
+      message.domain = tm.getFirstPartyDomainByTab(message.tabId);
+    } else {
+      message.domain = new Domain(message.tabURL).toString();
+    }
+  }
+  if (message.enabled && message.domain) {
+    extensionDisabledDomains.delete(message.domain);
+  } else {
+    extensionDisabledDomains.add(message.domain);
+  }
+  const items = {
+    [EXTENSION_DISABLED_DOMAINS_KEY]: Array.from(extensionDisabledDomains),
+  };
+  chrome.storage.local.set(items, () => {
+    tm.reloadDomainTabs(message.domain);
+    if (fromPopup) {
+      if (!tm.isTabSaved(message.tabId)) {
+        chrome.tabs.reload(message.tabId);
+      }
+      chrome.runtime.sendMessage({type: MessageType.CLOSE_POPUP});
+    }
+    chrome.runtime.sendMessage({
+      type: MessageType.UPDATE_OPTIONS_PAGE,
+      domain: message.domain,
+      enabled: message.enabled,
+    });
+  });
 }
 
 /**

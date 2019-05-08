@@ -54,6 +54,34 @@ function printDisabledExtensionDomainsTable() {
 }
 
 /**
+ * Initializes Chrome API events listeners
+ */
+function initChromeEventListeners() {
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === MessageType.UPDATE_OPTIONS_PAGE) {
+      if (message.enabled) { // Remove row
+        $(`[data-domain="${message.domain}"]`).closest('tr').remove();
+        if (!$('tbody').find('tr').length) {
+          $('#emptyDomainsText').show();
+          $('.table').closest('.row').hide();
+        }
+      } else { // Add row
+        const $domain = $('#domain');
+        const $error = $domain.closest('.input-group').find('.invalid-feedback');
+        const $row = createTableRow(message.domain);
+        const $table = $('.table');
+        $('#emptyDomainsText').hide();
+        $domain.val('');
+        $domain.removeClass('is-invalid');
+        $error.text('').hide();
+        $table.find('tbody').append($row);
+        $table.closest('.row').show();
+      }
+    }
+  });
+}
+
+/**
  * Initializes DOM event listeners
  */
 function initDOMEventListeners() {
@@ -123,19 +151,10 @@ function initDOMEventListeners() {
       $error.text(validateResponse.message).show();
       return;
     }
-    const $row = createTableRow($domain.val());
-    const $table = $('.table');
     chrome.runtime.sendMessage({
       'type': MessageType.UPDATE_EXTENSION_ENABLEMENT,
       'enabled': false,
       'domain': $domain.val(),
-    }, () => {
-      $('#emptyDomainsText').hide();
-      $domain.val('');
-      $domain.removeClass('is-invalid');
-      $error.text('').hide();
-      $table.find('tbody').append($row);
-      $table.closest('.row').show();
     });
   });
 
@@ -154,12 +173,6 @@ function initDOMEventListeners() {
       'type': MessageType.UPDATE_EXTENSION_ENABLEMENT,
       'enabled': true,
       'domain': domain,
-    }, () => {
-      $(this).closest('tr').remove();
-      if (!$('tbody').find('tr').length) {
-        $('#emptyDomainsText').show();
-        $('.table').closest('.row').hide();
-      }
     });
   });
   /* eslint-enable no-invalid-this */
@@ -170,6 +183,7 @@ function initDOMEventListeners() {
 // ************************
 
 $(function() {
+  initChromeEventListeners();
   initDOMEventListeners();
   printDisabledExtensionDomainsTable();
 });
