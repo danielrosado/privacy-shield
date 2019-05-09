@@ -1,5 +1,3 @@
-/* global $ */
-
 'use strict';
 
 import {DomainStateType, MessageType} from './utils/constants';

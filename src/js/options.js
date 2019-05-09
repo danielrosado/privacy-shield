@@ -1,5 +1,3 @@
-/* global $ */
-
 'use strict';
 
 import {EXTENSION_DISABLED_DOMAINS_KEY, MessageType} from './utils/constants';
