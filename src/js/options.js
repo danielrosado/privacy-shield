@@ -101,7 +101,7 @@ function initDOMEventListeners() {
     // eslint-disable-next-line max-len
     const expression = /[-a-zA-Z0-9@:%_+.~#?&/=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_+.~#?&/=]*)?/gi;
     const regex = new RegExp(expression);
-    if (!domain.match(regex) || domain.startsWith('chrome://')) {
+    if (!domain.match(regex) || domain.startsWith('chrome')) {
       response.message = 'The domain is not a valid URL';
       response.valid = false;
       return response;

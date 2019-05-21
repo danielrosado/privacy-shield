@@ -98,10 +98,10 @@ function printPopup(tabData) {
   } else { // disabled
     const $text = $cardBody.find('#extensionDisabledCardText');
     const $cardHeader = $('.card-header');
-    if (tabData.firstPartyDomain) {
-      $text.find('.domainName').html(`<b>${tabData.firstPartyDomain}</b>`);
-    } else {
+    if (tabData.firstPartyDomain.startsWith('chrome')) {
       $cardHeader.find('#enablementSwitch').prop('disabled', true);
+    } else {
+      $text.find('.domainName').html(`<b>${tabData.firstPartyDomain}</b>`);
     }
     $cardHeader.find('#enablementSwitch').prop('checked', false);
     $cardHeader.find('#enablementState').text('disabled');

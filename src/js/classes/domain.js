@@ -65,6 +65,6 @@ export default class Domain {
       domainStr += `${this._domain.subdomain}.`;
     }
     domainStr += `${this._domain.domain}.${this._domain.tld}`;
-    return domainStr.replace(/^\.|\.$/g, '');
+    return domainStr.replace(/^\.+|\.+$/g, '');
   }
 }

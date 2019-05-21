@@ -27,14 +27,14 @@ let yellowList;
  * @return {BlockingResponse} blockingResponse
  */
 function onBeforeRequestCallback(details) {
-  if (details.url.startsWith('chrome://') || details.tabId === -1) {
+  if (details.url.startsWith('chrome') || details.tabId === -1) {
     return {};
   }
   const requestDomain = new Domain(details.url);
   if (details.type === 'main_frame') {
     tm.removeTab(details.tabId);
     const enabled = !extensionDisabledDomains.has(requestDomain.toString());
-    tm.saveTabAndDomain(details.tabId, requestDomain, enabled);
+    tm.saveTab(details.tabId, requestDomain, enabled);
     return {};
   }
   if (!tm.isTabSaved(details.tabId) || !tm.isExtensionEnabled(details.tabId)
@@ -54,7 +54,6 @@ function onBeforeRequestCallback(details) {
   }
   const added = tm.addThirdPartyDomainToTab(details.tabId, requestDomain);
   if (added && requestDomain.state === DomainStateType.BLOCKED) {
-    tm.updateBlockedDomainCount(details.tabId);
     tm.updateBadge(details.tabId);
   }
   return blockingResponse;
@@ -109,18 +108,20 @@ function onHeadersReceivedCallback(details) {
 function getTabData(message) {
   const response = {};
   if (tm.isTabSaved(message.tabId)) {
-    response.firstPartyDomain = tm.getFirstPartyDomainByTab(message.tabId);
+    response.firstPartyDomain = tm.getFirstPartyDomainByTab(message.tabId).toString();
     response.extensionEnabled = tm.isExtensionEnabled(message.tabId);
+    response.thirdPartyDomains = tm.getThirdPartyDomainsByTab(message.tabId);
   } else {
-    if (message.tabURL.startsWith('chrome://')) {
+    if (message.tabURL.startsWith('chrome')) {
+      response.firstPartyDomain = message.tabURL;
       response.extensionEnabled = false;
     } else {
       response.firstPartyDomain = new Domain(message.tabURL).toString();
       response.extensionEnabled = !extensionDisabledDomains
           .has(response.firstPartyDomain);
     }
+    response.thirdPartyDomains = [];
   }
-  response.thirdPartyDomains = tm.getThirdPartyDomainsByTab(message.tabId);
   return response;
 }
 
@@ -129,15 +130,15 @@ function getTabData(message) {
  * @param {object} message
  */
 function updateExtensionEnablement(message) {
-  let fromPopup;
-  if ((fromPopup = !message.hasOwnProperty('domain'))) { // from popup switch
+  const fromPopup = !message.hasOwnProperty('domain');
+  if (fromPopup) { // from popup switch
     if (tm.isTabSaved(message.tabId)) {
-      message.domain = tm.getFirstPartyDomainByTab(message.tabId);
+      message.domain = tm.getFirstPartyDomainByTab(message.tabId).toString();
     } else {
       message.domain = new Domain(message.tabURL).toString();
     }
   }
-  if (message.enabled && message.domain) {
+  if (message.enabled) {
     extensionDisabledDomains.delete(message.domain);
   } else {
     extensionDisabledDomains.add(message.domain);
@@ -151,12 +152,12 @@ function updateExtensionEnablement(message) {
       if (!tm.isTabSaved(message.tabId)) {
         chrome.tabs.reload(message.tabId);
       }
-      chrome.runtime.sendMessage({type: MessageType.CLOSE_POPUP});
+      chrome.runtime.sendMessage({'type': MessageType.CLOSE_POPUP});
     }
     chrome.runtime.sendMessage({
-      type: MessageType.UPDATE_OPTIONS_PAGE,
-      domain: message.domain,
-      enabled: message.enabled,
+      'type': MessageType.UPDATE_OPTIONS_PAGE,
+      'domain': message.domain,
+      'enabled': message.enabled,
     });
   });
 }

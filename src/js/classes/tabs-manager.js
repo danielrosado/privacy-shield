@@ -18,7 +18,7 @@ export default class TabsManager {
    * @param {Domain} domain
    * @param {boolean} extensionEnabled
    */
-  saveTabAndDomain(tabId, domain, extensionEnabled) {
+  saveTab(tabId, domain, extensionEnabled) {
     this._tabDataMap.set(tabId, {
       firstPartyDomain: domain,
       extensionEnabled: extensionEnabled,
@@ -40,11 +40,7 @@ export default class TabsManager {
    * @return {boolean}
    */
   isExtensionEnabled(tabId) {
-    const tab = this._tabDataMap.get(tabId);
-    if (!tab) {
-      return false;
-    }
-    return tab.extensionEnabled;
+    return this._getTabById(tabId).extensionEnabled;
   }
 
   /**
@@ -54,7 +50,7 @@ export default class TabsManager {
    * @return {boolean}
    */
   isThirdPartyDomain(tabId, requestDomain) {
-    const tabDomain = this._tabDataMap.get(tabId).firstPartyDomain;
+    const tabDomain = this._getTabById(tabId).firstPartyDomain;
     return tabDomain.isThirdPartyDomain(requestDomain);
   }
 
@@ -66,14 +62,14 @@ export default class TabsManager {
    * @return {boolean}
    */
   addThirdPartyDomainToTab(tabId, domain) {
-    const tabDomains = this._tabDataMap.get(tabId);
-    if (!tabDomains.hasOwnProperty('thirdPartyDomains')) {
-      tabDomains.thirdPartyDomains = [domain];
+    const tab = this._getTabById(tabId);
+    if (!tab.hasOwnProperty('thirdPartyDomains')) {
+      tab.thirdPartyDomains = [domain];
       return true;
     }
-    const found = tabDomains.thirdPartyDomains.some((d) => d.equals(domain));
+    const found = tab.thirdPartyDomains.some((d) => d.equals(domain));
     if (!found) {
-      tabDomains.thirdPartyDomains.push(domain);
+      tab.thirdPartyDomains.push(domain);
       return true;
     }
     return false;
@@ -82,23 +78,21 @@ export default class TabsManager {
   /**
    * Returns the first-party domain of a given tab
    * @param {number} tabId
-   * @return {string|undefined}
+   * @return {Domain|undefined}
    */
   getFirstPartyDomainByTab(tabId) {
-    const tab = this._tabDataMap.get(tabId);
-    if (tab) {
-      return tab.firstPartyDomain.toString();
-    }
+    return this._getTabById(tabId).firstPartyDomain;
   }
 
   /**
-   * Returns the list of third-party domains of a given tab sorted by state
+   * Given a tab id, it returns an array with domain string-state pairs
+   * and sorted by state
    * @param {number} tabId
    * @return {array}
    */
   getThirdPartyDomainsByTab(tabId) {
-    const tab = this._tabDataMap.get(tabId);
-    if (!tab || !tab.hasOwnProperty('thirdPartyDomains')) {
+    const tab = this._getTabById(tabId);
+    if (!tab.hasOwnProperty('thirdPartyDomains')) {
       return [];
     }
     const domains = tab.thirdPartyDomains.map((domain) => ({
@@ -115,8 +109,8 @@ export default class TabsManager {
    * @return {string|undefined}
    */
   getThirdPartyDomainState(tabId, domain) {
-    const tab = this._tabDataMap.get(tabId);
-    if (!tab || !tab.hasOwnProperty('thirdPartyDomains')) {
+    const tab = this._getTabById(tabId);
+    if (!tab.hasOwnProperty('thirdPartyDomains')) {
       return;
     }
     let found;
@@ -159,34 +153,38 @@ export default class TabsManager {
   }
 
   /**
-   * Updates the blocked domain count
-   * @param {number} tabId
-   */
-  updateBlockedDomainCount(tabId) {
-    const tab = this._tabDataMap.get(tabId);
-    if (!tab.hasOwnProperty('blockedDomainCount')) {
-      tab.blockedDomainCount = 1;
-      return;
-    }
-    tab.blockedDomainCount++;
-  }
-
-  /**
-   * Updates the badge
+   * Updates the browser-action badge
    * @param {number} tabId
    */
   updateBadge(tabId) {
-    const count = this._tabDataMap.get(tabId).blockedDomainCount;
-    setTimeout(() => {
+    const tab = this._getTabById(tabId);
+    if (tab.hasOwnProperty('blockedDomainCount')) {
+      tab.blockedDomainCount++;
+    } else {
+      tab.blockedDomainCount = 1;
       chrome.browserAction.setBadgeBackgroundColor({
         color: '#dc3545',
         tabId: tabId,
-      }, () => {
-        chrome.browserAction.setBadgeText({
-          text: count.toString(),
-          tabId: tabId,
-        });
       });
-    }, 0);
+    }
+    chrome.browserAction.setBadgeText({
+      text: tab.blockedDomainCount.toString(),
+      tabId: tabId,
+    });
+  }
+
+  /**
+   * If tab ID does not exist, throws an exception
+   * else returns the tab data
+   * @param {number} tabId
+   * @return {Object} tab
+   * @private
+   */
+  _getTabById(tabId) {
+    const tab = this._tabDataMap.get(tabId);
+    if (!tab) {
+      throw Error(`Tab ${tabId} was not found`);
+    }
+    return tab;
   }
 }
