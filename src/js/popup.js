@@ -88,23 +88,23 @@ function printPopup(tabData) {
         const $row = createTableRow(domain);
         $cardBody.find('tbody').append($row);
       }
-      $cardBody.find('#tableDomains').show();
+      $cardBody.find('#domains').show();
     }
     // Add info and show it
-    const $text = $cardBody.find('#extensionEnabledCardText');
-    $text.find('.domainName').html(`<b>${tabData.firstPartyDomain}</b>`);
-    $text.find('#numTrackers').html(`<b>${$('.badge-danger').length}</b>`);
+    const $text = $cardBody.find('#extension-enabled-info');
+    $text.find('.domain-name').html(`<b>${tabData.firstPartyDomain}</b>`);
+    $text.find('#num-trackers').html(`<b>${$('.badge-danger').length}</b>`);
     $text.show();
   } else { // disabled
-    const $text = $cardBody.find('#extensionDisabledCardText');
+    const $text = $cardBody.find('#extension-disabled-info');
     const $cardHeader = $('.card-header');
     if (tabData.firstPartyDomain.startsWith('chrome')) {
-      $cardHeader.find('#enablementSwitch').prop('disabled', true);
+      $cardHeader.find('#enablement-toggle').prop('disabled', true);
     } else {
-      $text.find('.domainName').html(`<b>${tabData.firstPartyDomain}</b>`);
+      $text.find('.domain-name').html(`<b>${tabData.firstPartyDomain}</b>`);
     }
-    $cardHeader.find('#enablementSwitch').prop('checked', false);
-    $cardHeader.find('#enablementState').text('disabled');
+    $cardHeader.find('#enablement-toggle').prop('checked', false);
+    $cardHeader.find('#enablement-state').text('disabled');
     $text.show();
   }
 }
@@ -125,15 +125,15 @@ function initChromeEventListeners() {
  */
 function initDOMEventListeners() {
   /* eslint-disable no-invalid-this */
-  $('#btnInfo').click(function() {
+  $('#info').click(function() {
     createOrActiveTab(chrome.runtime.getURL('information.html'));
   });
 
-  $('#btnOptions').click(function() {
+  $('#options').click(function() {
     chrome.runtime.openOptionsPage();
   });
 
-  $('#enablementSwitch').change(function() {
+  $('#enablement-toggle').change(function() {
     const enabled = this.checked;
     sendMessageFromPopup({
       'type': MessageType.UPDATE_EXTENSION_ENABLEMENT,

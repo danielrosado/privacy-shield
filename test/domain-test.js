@@ -3,7 +3,11 @@
 import Domain from '../src/js/classes/domain';
 import {assert} from 'chai';
 
-describe('Domain', () => {
+describe('Domain', function() {
+  // **********************
+  // Variables declarations
+  // **********************
+
   let foo;
   let example_com;
   let example_org;
@@ -11,7 +15,11 @@ describe('Domain', () => {
   let gestion2_urjc_es;
   let chrome_extensions;
 
-  before(() => {
+  // ************************
+  // Testing settings
+  // ************************
+
+  before(function() {
     example_com = new Domain('example.com');
     example_org = new Domain('example.org');
     www_urjc_es = new Domain('www.urjc.es');
@@ -20,20 +28,22 @@ describe('Domain', () => {
     foo = new Domain('foo');
   });
 
-  describe('is null', () => {
-    it('should be null', () => {
+  // **********************
+  // Test suite
+  // **********************
+
+  describe('is null', function() {
+    it('should be null', function() {
       assert.isNull(chrome_extensions._domain, 'it is not null');
     });
 
-    it('should not be null', () => {
+    it('should not be null', function() {
       assert.isNotNull(example_com._domain, 'it is null');
     });
   });
 
-  describe('equals', () => {
-    // TODO: comparar con dominio no válido
-
-    it('should be equals', () => {
+  describe('equals', function() {
+    it('should be equals', function() {
       const new_foo = new Domain('foo');
       const new_example_com = new Domain('example.com');
       const new_www_urjc_es = new Domain('www.urjc.es');
@@ -42,30 +52,30 @@ describe('Domain', () => {
       assert.isTrue(www_urjc_es.equals(new_www_urjc_es), 'the domains are not equals');
     });
 
-    it('should not be equals', () => {
+    it('should not be equals', function() {
       assert.isFalse(example_com.equals(example_org), 'the domains are equals');
       assert.isFalse(example_org.equals(www_urjc_es), 'the domains are equals');
     });
   });
 
-  describe('isThirdPartyDomain', () => {
-    it('should be a third-party domain', () => {
+  describe('isThirdPartyDomain', function() {
+    it('should be a third-party domain', function() {
       assert.isTrue(example_com.isThirdPartyDomain(example_org), 'it is not a third-party domain');
       assert.isTrue(example_com.isThirdPartyDomain(www_urjc_es), 'it is not a third-party domain');
     });
 
-    it('should not be a third-party domain', () => {
+    it('should not be a third-party domain', function() {
       assert.isFalse(www_urjc_es.isThirdPartyDomain(gestion2_urjc_es), 'it is a third-party domain');
     });
   });
 
-  describe('toString', () => {
-    it('should not be a string', () => {
+  describe('toString', function() {
+    it('should not be a string', function() {
       const chrome_extensions_str = chrome_extensions.toString();
       assert.isUndefined(chrome_extensions_str, 'it is a string');
     });
 
-    it('should be a string', () => {
+    it('should be a string', function() {
       const example_com_str = example_com.toString();
       const www_urjc_es_str = www_urjc_es.toString();
       const urjc_es_str = www_urjc_es.toString(true);

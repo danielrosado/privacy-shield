@@ -217,9 +217,9 @@ function initChromeEventListeners() {
     // and the Privacy Badger yellow list
     fetch('data/data.json')
         .then((response) => response.json())
-        .then((response) => {
-          trackers = new Set(response.trackers);
-          yellowList = new Set(response.yellowList);
+        .then((data) => {
+          trackers = new Set(data.trackers);
+          yellowList = new Set(data.yellowList);
           initChromeEventListeners();
         });
   });

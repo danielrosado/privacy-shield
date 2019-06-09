@@ -162,11 +162,11 @@ export default class TabsManager {
       tab.blockedDomainCount++;
     } else {
       tab.blockedDomainCount = 1;
-      chrome.browserAction.setBadgeBackgroundColor({
-        color: '#dc3545',
-        tabId: tabId,
-      });
     }
+    chrome.browserAction.setBadgeBackgroundColor({
+      color: '#dc3545',
+      tabId: tabId,
+    });
     chrome.browserAction.setBadgeText({
       text: tab.blockedDomainCount.toString(),
       tabId: tabId,
