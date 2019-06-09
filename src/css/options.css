@@ -11,12 +11,12 @@
     margin-bottom: 1rem;
 }
 
-#btnAddDomain {
+#add-domain {
     margin-top: .25rem;
     display: inline;
 }
 
-#filterLabel {
+#filter-label {
     margin-top: .5rem;
     vertical-align: sub;
     width: 30%;
