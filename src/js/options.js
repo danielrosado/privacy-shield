@@ -23,7 +23,7 @@ function createTableRow(domain) {
   $row.append($dataDomain);
   const $dataAction = $('<td>');
   const $actionButton = $('<button>', {
-    'class': 'btn btn-danger btn-xs btnRemove',
+    'class': 'btn btn-danger btn-xs btn-remove-domain',
     'data-domain': domain,
   });
   $actionButton.append('<i class="fa fa-trash"></i> Remove');
@@ -39,7 +39,7 @@ function printDisabledExtensionDomainsTable() {
   chrome.storage.local.get(EXTENSION_DISABLED_DOMAINS_KEY, function(items) {
     const domains = items[EXTENSION_DISABLED_DOMAINS_KEY];
     if (!domains || !domains.length) {
-      $('#emptyDomainsText').show();
+      $('#empty-table-info').show();
       return;
     }
     const $table = $('.table');
@@ -60,7 +60,7 @@ function initChromeEventListeners() {
       if (message.enabled) { // Remove row
         $(`[data-domain="${message.domain}"]`).closest('tr').remove();
         if (!$('tbody').find('tr').length) {
-          $('#emptyDomainsText').show();
+          $('#empty-table-info').show();
           $('.table').closest('.row').hide();
         }
       } else { // Add row
@@ -68,7 +68,7 @@ function initChromeEventListeners() {
         const $error = $domain.closest('.input-group').find('.invalid-feedback');
         const $row = createTableRow(message.domain);
         const $table = $('.table');
-        $('#emptyDomainsText').hide();
+        $('#empty-table-info').hide();
         $domain.val('');
         $domain.removeClass('is-invalid');
         $error.text('').hide();
@@ -106,7 +106,7 @@ function initDOMEventListeners() {
       response.valid = false;
       return response;
     }
-    $('.btnRemove').each(function() {
+    $('.btn-remove-domain').each(function() {
       if (domain === $(this).data('domain')) {
         response.message = 'The domain was already added';
         return response.valid = false;
@@ -115,7 +115,7 @@ function initDOMEventListeners() {
     return response;
   }
 
-  $('#btnAddDomain').click(function() {
+  $('#add-domain').click(function() {
     const $domain = $('#domain');
     $domain.closest('.row').show('slow');
     $domain.focus();
@@ -165,7 +165,7 @@ function initDOMEventListeners() {
     $error.text('').hide();
   });
 
-  $('.table').delegate('.btnRemove', 'click', function() {
+  $('.table').delegate('.btn-remove-domain', 'click', function() {
     const domain = $(this).data('domain');
     chrome.runtime.sendMessage({
       'type': MessageType.UPDATE_EXTENSION_ENABLEMENT,

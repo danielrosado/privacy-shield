@@ -2,8 +2,16 @@
   "env": {
     "mocha": true
   },
+  "parserOptions": {
+    "ecmaVersion": 8
+  },
+  "extends": [
+    "eslint:recommended"
+  ],
   "rules": {
     "max-len": "off",
-    "camelcase": "off"
+    "camelcase": "off",
+    "no-invalid-this": "off",
+    "no-unused-vars": "warn"
   }
 }
