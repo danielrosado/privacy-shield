@@ -1,10 +1,10 @@
 {
-  "name": "privacy-shield",
+  "name": "privacyst",
   "version": "1.0.0",
   "description": "A Google Chrome Privacy Extension",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/danielrosado/privacy-shield.git"
+    "url": "git+https://github.com/danielrosado/privacyst.git"
   },
   "keywords": [
     "chrome-extension",
@@ -13,9 +13,9 @@
   "author": "Daniel Rosado",
   "license": "MPL-2.0",
   "bugs": {
-    "url": "https://github.com/danielrosado/privacy-shield/issues"
+    "url": "https://github.com/danielrosado/privacyst/issues"
   },
-  "homepage": "https://github.com/danielrosado/privacy-shield#readme",
+  "homepage": "https://github.com/danielrosado/privacyst#readme",
   "scripts": {
     "dev-build": "webpack --mode=development --watch",
     "prod-build": "webpack --mode=production",
