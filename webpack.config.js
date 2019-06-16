@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-
 'use strict';
 
 const path = require('path');
@@ -23,20 +21,45 @@ const config = {
   entry: {
     background: `${SRC_DIR}/js/background.js`,
     popup: `${SRC_DIR}/js/popup.js`,
+    options: `${SRC_DIR}/js/options.js`,
     bootstrap: `${SRC_DIR}/js/vendor/bootstrap.js`,
+    fontawesome: `${SRC_DIR}/js/vendor/fontawesome.js`,
   },
   output: {
     path: `${DIST_DIR}`,
     filename: (chunkData) => {
-      return chunkData.chunk.name === 'bootstrap' ? 'js/vendor/[name].js' : 'js/[name].js';
+      return ['bootstrap', 'fontawesome'].indexOf(chunkData.chunk.name) !== -1 ?
+        'js/vendor/[name].js' : 'js/[name].js';
     },
   },
+  devtool: false,
   plugins: buildPlugins,
   module: {
     rules: [
       {
         test: /\.css$/,
         use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.svg$/,
+        loader: 'svg-inline-loader',
+      },
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/,
+        loader: 'file-loader',
+      },
+      {
+        test: require.resolve('jquery'),
+        use: [
+          {
+            loader: 'expose-loader',
+            options: 'jQuery',
+          },
+          {
+            loader: 'expose-loader',
+            options: '$',
+          },
+        ],
       },
     ],
   },

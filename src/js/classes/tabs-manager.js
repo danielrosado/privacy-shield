@@ -1,7 +1,5 @@
 'use strict';
 
-import parseDomain from 'parse-domain';
-
 /**
  * TabsManager class for managing the domains
  * found while loading a tab
@@ -11,16 +9,20 @@ export default class TabsManager {
    * TabsManager constructor
    */
   constructor() {
-    this.tabDomainsMap = new Map();
+    this._tabDataMap = new Map();
   }
 
   /**
-   * Returns a domain object given an URL
-   * @param {string} url
-   * @return {Object}
+   * Saves a tab with its first-party domain and its enablement status
+   * @param {number} tabId
+   * @param {Domain} domain
+   * @param {boolean} extensionEnabled
    */
-  getDomain(url) {
-    return parseDomain(url);
+  saveTab(tabId, domain, extensionEnabled) {
+    this._tabDataMap.set(tabId, {
+      firstPartyDomain: domain,
+      extensionEnabled: extensionEnabled,
+    });
   }
 
   /**
@@ -29,65 +31,97 @@ export default class TabsManager {
    * @return {boolean}
    */
   isTabSaved(tabId) {
-    return this.tabDomainsMap.has(tabId);
+    return this._tabDataMap.has(tabId);
   }
 
   /**
-   * Saves a tab with its first-party domain
+   * Returns true if extension is enabled at this tab
    * @param {number} tabId
-   * @param {string} url
+   * @return {boolean}
    */
-  saveTabWithURL(tabId, url) {
-    this.tabDomainsMap.set(tabId, {firstPartyDomain: parseDomain(url)});
+  isExtensionEnabled(tabId) {
+    return this._getTabById(tabId).extensionEnabled;
   }
 
   /**
    * Checks if a domain is a third-party domain
    * @param {number} tabId
-   * @param {Object} requestDomain
+   * @param {Domain} requestDomain
    * @return {boolean}
    */
   isThirdPartyDomain(tabId, requestDomain) {
-    const tabDomain = this.tabDomainsMap.get(tabId).firstPartyDomain;
-    return tabDomain.domain !== requestDomain.domain ||
-      tabDomain.tld !== requestDomain.tld;
-  };
-
-  /**
-   * Add a third-party domain from a tab
-   * @param {Object} domain
-   * @param {number} tabId
-   */
-  addThirdPartyDomainFromTab(domain, tabId) {
-    const tabDomains = this.tabDomainsMap.get(tabId);
-    if (!tabDomains.hasOwnProperty('thirdPartyDomains')) {
-      tabDomains.thirdPartyDomains = [];
-    }
-    const found = tabDomains.thirdPartyDomains.some((d) =>
-      d.domain === domain.domain && d.subdomain === domain.subdomain
-        && d.tld === domain.tld);
-    if (!found) {
-      tabDomains.thirdPartyDomains.push(domain);
-    }
+    const tabDomain = this._getTabById(tabId).firstPartyDomain;
+    return tabDomain.isThirdPartyDomain(requestDomain);
   }
 
   /**
-   * Returns the list of domains found in a tab
+   * Adds a third-party domain to a given tab
+   * and returns if it was added or not
+   * @param {number} tabId
+   * @param {Domain} domain
+   * @return {boolean}
+   */
+  addThirdPartyDomainToTab(tabId, domain) {
+    const tab = this._getTabById(tabId);
+    if (!tab.hasOwnProperty('thirdPartyDomains')) {
+      tab.thirdPartyDomains = [domain];
+      return true;
+    }
+    const found = tab.thirdPartyDomains.some((d) => d.equals(domain));
+    if (!found) {
+      tab.thirdPartyDomains.push(domain);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Returns the first-party domain of a given tab
+   * @param {number} tabId
+   * @return {Domain|undefined}
+   */
+  getFirstPartyDomainByTab(tabId) {
+    return this._getTabById(tabId).firstPartyDomain;
+  }
+
+  /**
+   * Given a tab id, it returns an array with domain string-state pairs
+   * and sorted by state
    * @param {number} tabId
    * @return {array}
    */
   getThirdPartyDomainsByTab(tabId) {
-    const tab = this.tabDomainsMap.get(tabId);
-    return tab ? tab.thirdPartyDomains : [];
+    const tab = this._getTabById(tabId);
+    if (!tab.hasOwnProperty('thirdPartyDomains')) {
+      return [];
+    }
+    const domains = tab.thirdPartyDomains.map((domain) => ({
+      name: domain.toString(),
+      state: domain.state,
+    }));
+    return domains.sort((d1, d2) => d1.state - d2.state);
   }
 
   /**
-   * Clears the domains added from a tab
+   * Returns the state of a third-party domain if exists
    * @param {number} tabId
+   * @param {Domain} domain
+   * @return {string|undefined}
    */
-  clearThirdPartyDomainsByTab(tabId) {
-    if (this.tabDomainsMap.has(tabId)) {
-      this.tabDomainsMap.get(tabId).thirdPartyDomains = [];
+  getThirdPartyDomainState(tabId, domain) {
+    const tab = this._getTabById(tabId);
+    if (!tab.hasOwnProperty('thirdPartyDomains')) {
+      return;
+    }
+    let found;
+    for (const d of tab.thirdPartyDomains) {
+      if (d.equals(domain)) {
+        found = d;
+        break;
+      }
+    }
+    if (found !== undefined) {
+      return found.state;
     }
   }
 
@@ -96,13 +130,61 @@ export default class TabsManager {
    * @param {number} tabId
    */
   removeTab(tabId) {
-    this.tabDomainsMap.delete(tabId);
+    this._tabDataMap.delete(tabId);
   }
 
   /**
-   * Removes all added tabs
+   * Clear all saved tabs
    */
   clear() {
-    this.tabDomainsMap.clear();
+    this._tabDataMap.clear();
+  }
+
+  /**
+   * Reloads all tabs of the given domain
+   * @param {string} domainStr
+   */
+  reloadDomainTabs(domainStr) {
+    for (const [tabId, tabData] of this._tabDataMap) {
+      if (tabData.firstPartyDomain.toString() === domainStr) {
+        chrome.tabs.reload(tabId);
+      }
+    }
+  }
+
+  /**
+   * Updates the browser-action badge
+   * @param {number} tabId
+   */
+  updateBadge(tabId) {
+    const tab = this._getTabById(tabId);
+    if (tab.hasOwnProperty('blockedDomainCount')) {
+      tab.blockedDomainCount++;
+    } else {
+      tab.blockedDomainCount = 1;
+    }
+    chrome.browserAction.setBadgeBackgroundColor({
+      color: '#dc3545',
+      tabId: tabId,
+    });
+    chrome.browserAction.setBadgeText({
+      text: tab.blockedDomainCount.toString(),
+      tabId: tabId,
+    });
+  }
+
+  /**
+   * If tab ID does not exist, throws an exception
+   * else returns the tab data
+   * @param {number} tabId
+   * @return {Object} tab
+   * @private
+   */
+  _getTabById(tabId) {
+    const tab = this._tabDataMap.get(tabId);
+    if (!tab) {
+      throw Error(`Tab ${tabId} was not found`);
+    }
+    return tab;
   }
 }

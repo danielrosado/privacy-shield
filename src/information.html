@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Information</title>
+  <script src="js/vendor/bootstrap.js"></script>
+  <script src="js/vendor/fontawesome.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <div class="row">
+        <div class="col-1">
+          <img src="images/icons/icon48.png" alt="Privacyst Icon">
+        </div>
+        <div class="col-11">
+          <h1>Privacyst</h1>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <p class="card-text"><a href="https://github.com/danielrosado/privacyst/" target="_blank">Privacyst</a>
+        is a simple Google Chrome Extension which detects and block
+        third-party trackers. To do this task, Privacyst uses two lists.</p>
+      <ul class="list-group" style="margin-bottom: 1rem">
+        <li class="list-group-item">
+          <a href="https://github.com/disconnectme/disconnect-tracking-protection/"
+             target="_blank">Disconnect.me</a> list of trackers
+        </li>
+        <li class="list-group-item"><a href="https://www.eff.org/es/node/99095" target="_blank">Privacy Badger</a>
+          yellow list
+        </li>
+      </ul>
+      <p class="card-text">When Privacyst intercepts a request to a third party-domain, it analyzes it
+        and tags it as follows.</p>
+      <ul class="list-group">
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-md-1">
+              <span class="badge badge-danger"><i class="fa fa-ban"></i> Blocked</span>
+            </div>
+            <div class="col-md-11">
+              The request domain was recognized as a tracker and it was blocked.
+            </div>
+          </div>
+        </li>
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-md-1">
+              <span class="badge badge-warning"><i class="fa fa-warning"></i> Cookies</span></div>
+            <div class="col-md-11">
+              The request domain was found in yellow list. This list allows requests to third-party
+              domains only for functionality purposes. Cookie, Referer and Set-Cookie headers
+              are deleted before sending the request or receiving the response.
+            </div>
+          </div>
+        </li>
+        <li class="list-group-item" style="margin-bottom: 1rem">
+          <div class="row">
+            <div class="col-md-1">
+              <span class="badge badge-success"><i class="fa fa-check"></i> Allowed</span>
+            </div>
+            <div class="col-md-11">
+              The request domain was analyzed and it was allowed.
+            </div>
+          </div>
+        </li>
+      </ul>
+      <p class="card-text">Privacyst permits to disable the extension on any web site
+        and offers an <a href="options.html" target="_blank">options page</a> for managing it.</p>
+    </div>
+    <div class="card-footer">
+      <div>Icons made by <a href="https://www.flaticon.com/authors/icon-works" title="Icon Works" target="_blank">Icon
+        Works</a>
+        from <a href="https://www.flaticon.com/" title="Flaticon" target="_blank">www.flaticon.com</a> is
+        licensed by
+        <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC
+          3.0 BY</a>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

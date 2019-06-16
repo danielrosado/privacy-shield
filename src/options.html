@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Options</title>
+  <script src="js/vendor/bootstrap.js"></script>
+  <script src="js/vendor/fontawesome.js"></script>
+  <script src="js/options.js"></script>
+  <link rel="stylesheet" href="css/options.css">
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <div class="row">
+        <div class="col-1">
+          <img src="images/icons/icon48.png" alt="Privacyst Icon">
+        </div>
+        <div class="col-11">
+          <h1>Options</h1>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-10">
+          <p class="card-text">This panel allows you to manage the disabled extension domains.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-5">
+          <button class="btn btn-sm btn-primary" type="button" id="add-domain">
+            <i class="fa fa-plus"></i> Add domain
+          </button>
+        </div>
+        <div class="col-md-5">
+          <label id="filter-label" for="filter"><i class="fa fa-filter"></i> Filter domains</label>
+          <input type="text" class="form-control" id="filter" placeholder="www.example.org" aria-label="Filter">
+        </div>
+      </div>
+      <div class="row" style="display: none">
+        <div class="col-md-5" style="padding-right: 0">
+          <div class="input-group">
+            <input type="text" class="form-control" id="domain" placeholder="www.example.org"
+                   aria-label="Add domain actions" aria-describedby="button-addon" required>
+            <div class="input-group-append" id="button-addon">
+              <button type="button" class="btn btn-outline-primary" id="add"><i class="fa fa-plus"></i> Add</button>
+              <button type="button" class="btn btn-outline-danger" id="cancel"><i class="fa fa-remove"></i> Cancel
+              </button>
+            </div>
+            <div class="invalid-feedback" style="display: none"></div>
+          </div>
+        </div>
+      </div>
+      <p class="card-text" id="empty-table-info" style="display: none">There are not domains currently.</p>
+      <div class="row" style="display: none">
+        <div class="col-md-10">
+          <div class="table-responsive">
+            <table class="table border">
+              <thead class="thead-light">
+              <tr>
+                <th scope="col">Domain</th>
+                <th scope="col">Action</th>
+              </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

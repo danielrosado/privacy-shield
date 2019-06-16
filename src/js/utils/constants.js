@@ -1,10 +1,16 @@
 'use strict';
 
-export const MSG_TYPE = Object.freeze({
-  GET_THIRD_PARTY_DOMAINS: 0,
+export const MessageType = Object.freeze({
+  GET_TAB_DATA: 0,
+  UPDATE_EXTENSION_ENABLEMENT: 1,
+  CLOSE_POPUP: 2,
+  UPDATE_OPTIONS_PAGE: 3,
 });
 
-export const DOMAIN_STATUS = Object.freeze({
-  ALLOWED: 0,
-  BLOCKED: 1,
+export const DomainStateType = Object.freeze({
+  BLOCKED: 0,
+  COOKIE_BLOCKED: 1,
+  ALLOWED: 2,
 });
+
+export const EXTENSION_DISABLED_DOMAINS_KEY = 'extensionDisabledDomains';
