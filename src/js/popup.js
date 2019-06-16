@@ -32,14 +32,14 @@ function createOrActiveTab(url) {
  * @param {object} message
  * @param {function} responseCallback
  */
-function sendMessageFromPopup(message, responseCallback=undefined) {
+function sendMessageFromPopup(message, responseCallback) {
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     message.tabId = tabs[0].id;
     message.tabURL = tabs[0].url;
-    if (responseCallback !== undefined) {
-      chrome.runtime.sendMessage(message, responseCallback);
-    } else {
+    if (responseCallback === undefined) {
       chrome.runtime.sendMessage(message);
+    } else {
+      chrome.runtime.sendMessage(message, responseCallback);
     }
   });
 }
@@ -84,9 +84,9 @@ function printPopup(tabData) {
   if (tabData.extensionEnabled) {
     // Builds third-party domains table
     if (tabData.thirdPartyDomains.length) {
+      const $tbody = $cardBody.find('tbody');
       for (const domain of tabData.thirdPartyDomains) {
-        const $row = createTableRow(domain);
-        $cardBody.find('tbody').append($row);
+        $tbody.append(createTableRow(domain));
       }
       $cardBody.find('#domains').show();
     }

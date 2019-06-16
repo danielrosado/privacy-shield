@@ -14,10 +14,7 @@ import {EXTENSION_DISABLED_DOMAINS_KEY, MessageType} from './utils/constants';
 function createTableRow(domain) {
   const $row = $('<tr>');
   const $dataDomain = $('<td>');
-  const $anchor = $('<a>', {
-    'href': `http://${domain}`,
-    'target': '_blank',
-  });
+  const $anchor = $('<a>', {'href': `http://${domain}`, 'target': '_blank'});
   $anchor.text(domain);
   $dataDomain.append($anchor);
   $row.append($dataDomain);
@@ -43,9 +40,9 @@ function printDisabledExtensionDomainsTable() {
       return;
     }
     const $table = $('.table');
+    const $tbody = $table.find('tbody');
     for (const domain of domains) {
-      const $row = createTableRow(domain);
-      $table.find('tbody').append($row);
+      $tbody.append(createTableRow(domain));
     }
     $table.closest('.row').show();
   });
@@ -66,13 +63,12 @@ function initChromeEventListeners() {
       } else { // Add row
         const $domain = $('#domain');
         const $error = $domain.closest('.input-group').find('.invalid-feedback');
-        const $row = createTableRow(message.domain);
         const $table = $('.table');
         $('#empty-table-info').hide();
         $domain.val('');
         $domain.removeClass('is-invalid');
         $error.text('').hide();
-        $table.find('tbody').append($row);
+        $table.find('tbody').append(createTableRow(message.domain));
         $table.closest('.row').show();
       }
     }
@@ -90,7 +86,7 @@ function initDOMEventListeners() {
    * @param {string} domain
    * @return {object} response
    */
-  function validate(domain) {
+  function validateDomain(domain) {
     const response = {valid: true};
     if (domain === '') {
       response.message = 'The domain is empty';
@@ -143,7 +139,7 @@ function initDOMEventListeners() {
   $('#add').click(function() {
     const $domain = $('#domain');
     const $error = $domain.closest('.input-group').find('.invalid-feedback');
-    const validateResponse = validate($domain.val());
+    const validateResponse = validateDomain($domain.val());
     if (!validateResponse.valid) {
       $domain.addClass('is-invalid');
       $error.text(validateResponse.message).show();
@@ -165,7 +161,7 @@ function initDOMEventListeners() {
     $error.text('').hide();
   });
 
-  $('.table').delegate('.btn-remove-domain', 'click', function() {
+  $('.table').on('click', '.btn-remove-domain', function() {
     const domain = $(this).data('domain');
     chrome.runtime.sendMessage({
       'type': MessageType.UPDATE_EXTENSION_ENABLEMENT,
