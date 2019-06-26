@@ -3,7 +3,7 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
 const {assert} = require('chai');
-const extensionName = 'Privacy Shield';
+const extensionName = 'Privacyst';
 
 describe('Options UI testing', function() {
   // **********************
