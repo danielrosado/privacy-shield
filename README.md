@@ -25,7 +25,7 @@ When Privacyst intercepts a request to a third party-domain, it analyzes it and 
 
 ### External Modules
 - Parse-domain: parses an URL and return its domain, subdomain and top-level domain.
-- Bootstrap: a front-end framework for UI desingning.
+- Bootstrap: a front-end framework for UI designing.
 - Font-awesome: an icon set.
 
 ## Settings
